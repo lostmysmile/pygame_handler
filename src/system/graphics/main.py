@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Union
 
 import pygame
@@ -5,7 +7,6 @@ from pathlib import Path
 
 if TYPE_CHECKING:
     from ..state.State import State
-
 class Background:
     def __init__(self, color: str | None = None, image: str | None = None) -> None:
         self.color = color
