@@ -17,8 +17,10 @@ else:
 
 
 class Game:
+    DEBUG_MODE: bool = False
+
     def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
-        self.States = States()
+        self.States = States(self)
         self.DEFAULT_STATE = self.States.default_state
 
         self.window = Window(
@@ -28,12 +30,13 @@ class Game:
 
     def loop_logic(self):
         active_state = self.States.active_state
-
         pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
         active_state.handle_keyboard_input(keys=pressed_keys)
 
         triggered_events: list[Event] = pygame.event.get()
         active_state.handle_pygame_events(triggered_events)
+
+        active_state.update(self.window.clock.dt)
 
     def run(self):
         if self.States:

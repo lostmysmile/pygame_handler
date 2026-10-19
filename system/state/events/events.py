@@ -1,38 +1,33 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Unpack
 
 if TYPE_CHECKING:
     if __package__:
-        from ..state import State
+        from .. import State
     else:
         from state import State
 
-import pygame
-from enum import StrEnum
-from itertools import chain
-from typing import Any, Callable, Literal
+from typing import Any, Callable
+
+if __package__:
+    from system.state.events import ENUMS
+else:
+    import ENUMS
 
 
-class ENUMS(StrEnum):
-    ANY_TRIGGER = "{ANY}"
-
-
-class registered_func[TriggerType, **P, R]:
-    __slots__ = "trigger", "action", "handle_once"
+class registered_func[**P, R]:
+    __slots__ = "action", "handle_once"
 
     def __init__(
         self,
-        trigger: TriggerType,
         action: Callable[P, R],
         handle_once: bool = True,
     ):
-        self.trigger: TriggerType = trigger
         self.action: Callable[P, R] = action
         self.handle_once: bool = handle_once
 
     def __iter__(self):
-        yield self.trigger
         yield self.action
         yield self.handle_once
 
@@ -53,35 +48,48 @@ class State_EventContext[EventType]:
 
 
 class Registered_Actions[TriggerType, EventContextType, R = Any]:
-    iterable: list[
-        registered_func[
-            TriggerType,
-            [State_EventContext[EventContextType]],
-            R
-        ]
-    ] = []
+    iterable: dict[TriggerType | ENUMS.TYPE_ANY_TRIGGER,
+                   set[registered_func[[State_EventContext[EventContextType]], R]]
+                   ] = {ENUMS.ANY_TRIGGER: set()}
 
-    def decorator_register(self, trigger: TriggerType, handle_once: bool = True):
+    def register(
+        self,
+        trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER,
+        func: Callable[[State_EventContext[EventContextType]], R],
+        handle_once: bool = True,
+    ):
+        new_func = registered_func(func, handle_once)
+        try:
+            trigger_set = self.iterable[trigger]
+        except KeyError:
+            trigger_set: set[
+                registered_func[[State_EventContext[EventContextType]], R]
+            ] = set()
+            self.iterable[trigger] = trigger_set
+        else:
+            trigger_set.add(new_func)
+
+    def decorator_register(self,
+                           trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER = ENUMS.ANY_TRIGGER,
+                           handle_once: bool = True):
         def wrapper(
             func: Callable[[State_EventContext[EventContextType]], R]
         ):
-            new_func = registered_func(trigger, func, handle_once)
-            self.iterable.append(new_func)
+            self.register(trigger=trigger, func=func, handle_once=handle_once)
             return func
 
         return wrapper
 
-    def register(
-        self,
-        trigger: TriggerType,
-        func: Callable[[State_EventContext[EventContextType]], R],
-        handle_once: bool = True,
-    ):
-        new_func = registered_func(trigger, func, handle_once)
-        self.iterable.append(new_func)
+    @property
+    def registered_triggers(self):
+        yield from self.iterable.keys()
+
+    @property
+    def registered_events(self):
+        yield from self.iterable.values()
 
     def __iter__(self):
-        yield from self.iterable
+        yield from self.iterable.items()
 
 
 class Event:
@@ -119,7 +127,7 @@ class StateEvents:
 
 class KeyboardEvents:
     list: Registered_Actions[
-        int | Literal[ENUMS.ANY_TRIGGER],
+        int | ENUMS.TYPE_ANY_TRIGGER,
         KeyboardEvents,
         Any,
     ] = Registered_Actions()
@@ -132,14 +140,15 @@ class KeyboardEvents:
 
 
 class PygameEvents:
-    Events_List: Registered_Actions[
-        int | Literal[ENUMS.ANY_TRIGGER],
-        PygameEvents,
-        Any,
-    ] = Registered_Actions()
     __slots__ = ()
 
     context: State_EventContext[PygameEvents] = State_EventContext["PygameEvents"]()
+
+    Events_List: Registered_Actions[
+        int,
+        PygameEvents,
+        Any,
+    ] = Registered_Actions()
 
 
 class EventsHandler:

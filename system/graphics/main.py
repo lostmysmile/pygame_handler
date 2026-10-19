@@ -72,7 +72,7 @@ class EntitiesHandler:
 
     def update(self):
         for entity in self.entity_list:
-            entity.graphics.update()
+            entity.update()
 
     def draw(self, surf: pygame.Surface):
         for entity in self.entity_list:
