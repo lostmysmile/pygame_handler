@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
 Name: pygame-handler
 Version: 0.1.0
-Requires-Python: >=3.12
+Requires-Python: >=3.13
 Provides-Extra: pygame
 Requires-Dist: pygame; extra == "pygame"
 Provides-Extra: pygame-ce
