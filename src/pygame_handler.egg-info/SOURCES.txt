@@ -19,4 +19,4 @@ src/system/state/__init__.py
 src/system/state/events/ENUMS.py
 src/system/state/events/__init__.py
 src/system/state/events/events.py
-tests/testing.py
+tests/test_events.py

@@ -61,6 +61,18 @@ class EventsList[R](Events_Iterable_Type):
     def register(self, action: Callable[[State_EventContext[Self]], R]):
         self.actions.append((action))
 
+class OptionsEnabledList():
+    """
+    TODO make events (callables) that can be executed on each frame 
+    (or variable frame) 
+    ex: every 1 frame or 10 frames
+    (with or without an option required) option: variable that simulates settings for the game engine
+    ex: if Game.Options.Stepped_Frames=ON > every {variable; mentioned above} frame wait until keyboard.get_pressed("Enter") 
+    ! not each pause should the engine fix movements from delta time or else things would teleport far ahead
+        ? check elapsed time and subtract from the dt to get accurate measures
+    """
+    ...
+
 
 class functions_list[TriggerType:int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGERS.TYPE | None,
                      EventContextType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.event.Event,

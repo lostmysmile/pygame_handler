@@ -1,0 +1,15 @@
+# .github/actions/analyze-tests/action.yml
+name: 'Analyze Pygame Tests'
+description: 'Sifts through pytest performance data'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Profile Slowest Game Tests
+      shell: bash
+      run: |
+        if [ -f ".pytest_cache/v/cache/lastfailed" ]; then
+          echo "⚠️ Warning: Some game loops failed in this run."
+        fi
+        echo "=== ⏱️ TOP 5 SLOWEST GAME TESTS ==="
+        python -m pytest --durations=5 -q --collect-only

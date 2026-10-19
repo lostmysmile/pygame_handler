@@ -3,7 +3,7 @@ class show_log:
     __slots__="Message"
     def __init__(self,Message:str):
         self.Message = Message
-        
+
     def __str__(self):
         return self.Message
 
@@ -17,6 +17,9 @@ class FLAGS:
     states_info = False
     state_context_info = False
     states_transitions = False
+
+    #TODO ADD TIMERS FOR EACH STEP
+    time_internals_=False
 
     @classmethod
     def set(cls, bunch: Iterable[str], state: bool = False):

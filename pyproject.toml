@@ -1,11 +1,11 @@
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
-requires-python = ">=3.12"
 
 [project]
 name = "pygame-handler"
 version = "0.1.0"
+requires-python = ">=3.12"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -13,3 +13,4 @@ where = ["src"]
 [project.optional-dependencies]
 pygame = ["pygame"]
 pygame-ce = ["pygame-ce"]
+test = ["pytest"]

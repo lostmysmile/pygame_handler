@@ -84,7 +84,7 @@ class State:
 
             event = events_with_type.get(event_trigger)
             
-            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (event is not None)):
+            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (event is not None):
                 for listener in listeners:
                     if listener.handle_once is True and listener.action in handled:
                         if debugger.FLAGS.debug and debugger.FLAGS.event_info:
