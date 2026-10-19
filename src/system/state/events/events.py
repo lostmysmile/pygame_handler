@@ -75,6 +75,8 @@ class functions_list[TriggerType:int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGE
     def _register_internal(self,
                            trigger: TriggerType,
                            func_info: CallableInfo[[State_EventContext[EventContextType]], R]):
+        if func_info.action is None:
+            raise ValueError("Cannot register NoneType")
         self.iterable[trigger].append(func_info)
 
     def register(
@@ -90,7 +92,7 @@ class functions_list[TriggerType:int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGE
             State_EventContext[EventContextType]], R]] = None
     ):
         new_func = func_info or CallableInfo(func, handle_once)  # type: ignore
-
+    
         if (isinstance((triggers), str )):
             self._register_internal(triggers, new_func)
 
