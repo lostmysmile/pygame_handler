@@ -48,9 +48,9 @@ class Game:
             if debugger.FLAGS.states_transitions:
                 print("Using Default State.")
 
-        current_state = self.States.active_state
+        active_state = self.States.active_state
 
-        while current_state.running:
+        while active_state.running:
             if debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Handling logic...")
             self.main_logic()
@@ -60,7 +60,7 @@ class Game:
 
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Updating...")
-            current_state.update(self.window.clock.dt)
+            active_state.update(self.window.clock.dt)
 
             if debugger.FLAGS.debug and debugger.FLAGS.states_info:
                 print("Updated.")
@@ -68,7 +68,7 @@ class Game:
 
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Drawing...")
-            self.window.draw(current_state)
+            self.window.draw(active_state)
 
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Finished Drawing.")
