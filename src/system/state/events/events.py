@@ -1,19 +1,21 @@
-from __future__ import annotations
-
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Callable, Unpack
+from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack
+import pygame
+
+from helper import debugger
 
 if TYPE_CHECKING:
-    if __package__:
-        from .. import State
-    else:
-        from state import State
+    from .. import State
 
 
 from ..events import ENUMS
 
 
-class registered_func[**P, R]:
+class Events_Iterable_Type:
+    __slots__ = ()
+
+
+class CallableInfo[**P, R]:
     __slots__ = "action", "handle_once"
 
     def __init__(self,
@@ -24,18 +26,21 @@ class registered_func[**P, R]:
         self.action: Callable[P, R] = action
         self.handle_once: bool = handle_once
 
+    def __str__(self):
+        return f"<{self.action} runs {"once" if self.handle_once else "multiple times"}>"
+
     def __iter__(self):
         yield self.action
         yield self.handle_once
 
 
-class State_EventContext[EventType]:
+class State_EventContext[EventType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.Event]:
     __slots__ = ("activated_event", "active_state", "dt")
 
-    def __init__(self) -> None:
-        self.dt: int
-        self.active_state: State
-        self.activated_event: EventType
+    def __init__(self, active_state: State, activated_event: EventType, dt: Optional[int | float] = None) -> None:
+        self.active_state: State = active_state
+        self.activated_event: EventType = activated_event
+        self.dt: int | float | None = dt
 
     def update(self, dt=None, active_state=None):
         if active_state is not None:
@@ -44,30 +49,82 @@ class State_EventContext[EventType]:
             self.dt = dt
 
 
-class Registered_Actions[TriggerType, EventContextType, R = Any]:
+class EventsList[R](Events_Iterable_Type):
+    __slots__ = ("actions",)
+
+    def __init__(self) -> None:
+        self.actions: list[Callable[[State_EventContext[Self]], R]] = []
+
+    def invoke_internal(self, ctx: State_EventContext[Self]) -> Generator[R, None, None]:
+        return (action(ctx) for action in self.actions)
+
+    def register(self, action: Callable[[State_EventContext[Self]], R]):
+        self.actions.append((action))
+
+
+class functions_list[TriggerType:int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGERS.TYPE | None,
+                     EventContextType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.event.Event,
+                     R= Any]:
     __slots__ = "iterable",
 
     def __init__(self) -> None:
-        self.iterable: dict[TriggerType | ENUMS.TYPE_ANY_TRIGGER | None,
-                            list[registered_func[[State_EventContext[EventContextType]], R]]
-                            ] = {ENUMS.ANY_TRIGGER: list()}
+        self.iterable: dict[TriggerType,
+                            list[CallableInfo[[State_EventContext[EventContextType]], R]]
+                            ] = {}
+
+    def _register_internal(self,
+                           trigger: TriggerType,
+                           func_info: CallableInfo[[State_EventContext[EventContextType]], R]):
+        self.iterable.setdefault(trigger, list()).append(func_info)
 
     def register(
         self,
-        trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER |None ,
-        func: Callable[[State_EventContext[EventContextType]], R],
+        triggers: Optional[
+            TriggerType |
+            Iterable[TriggerType]
+        ] = ENUMS.NO_TRIGGERS.VALUE,
+        func: Optional[Callable[[State_EventContext[EventContextType]], R]] = None,
         handle_once: bool = True,
+        *,
+        func_info: Optional[CallableInfo[[
+            State_EventContext[EventContextType]], R]] = None
     ):
+        new_func = func_info or CallableInfo(func, handle_once)  # type: ignore
 
-        self.iterable.setdefault(trigger, list()).append(registered_func(func, handle_once))
+        if (isinstance((triggers), str )):
+            self._register_internal(triggers, new_func)
+
+        elif isinstance(triggers, int):
+            self._register_internal(triggers, new_func)
+
+        elif isinstance(triggers, Iterable):
+            for trigger in triggers:
+                self._register_internal(trigger, new_func)
+
+        else:
+            raise TypeError(f"Unknown trigger type: {triggers} of type {type(triggers)}")
+
+
+        if debugger.FLAGS.debug and debugger.FLAGS.event_registers:
+            print(f"Registered {new_func!s} with trigger: {triggers!r}")
+        return func
 
     def decorator_register(self,
-                           trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER | None = None,
-                           handle_once: bool = True):
+                           triggers: Optional[
+                               TriggerType |
+                               Iterable[TriggerType]
+                           ] = ENUMS.NO_TRIGGERS.VALUE,
+                           func: Optional[Callable[[
+                               State_EventContext[EventContextType]], R]] = None,
+                           handle_once: bool = True,
+                           *,
+                           func_info: Optional[CallableInfo[[State_EventContext[EventContextType]], R]] = None):
         def wrapper(
             func: Callable[[State_EventContext[EventContextType]], R]
         ):
-            self.register(trigger=trigger, func=func, handle_once=handle_once)
+
+            self.register(triggers=triggers, func=func,
+                          handle_once=handle_once, func_info=func_info)
             return func
 
         return wrapper
@@ -84,66 +141,40 @@ class Registered_Actions[TriggerType, EventContextType, R = Any]:
         yield from self.iterable.items()
 
 
-class Event:
-    __slots__ = "actions", "context"
+class KeyboardEventsQueue(Events_Iterable_Type):
+    __slots__ = ("actions",)
 
     def __init__(self) -> None:
-        self.context = State_EventContext["Event"]()
-        self.actions: list[Callable[[State_EventContext[Event]], Any]] = []
-
-    def invoke_internal(self):
-        self.context.activated_event = self
-        for action in self.actions:
-            action(self.context)
-
-    def register(self, action: Callable[[State_EventContext[Event]], Any]):
-        self.actions.append((action))
+        self.actions: functions_list[
+            int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGERS.TYPE,
+            pygame.event.Event,
+            Any,
+        ] = functions_list()
 
 
-class QueuedEvent:
-    __slots__ = "before_render", "after_render"
-
-    def __init__(self) -> None:
-        self.before_render = Event()
-        self.after_render = Event()
-
-
-class StateEvents:
-    __slots__ = "Draw_Event", "Update_Event"
-
-    def __init__(self) -> None:
-        self.Draw_Event = QueuedEvent()
-        self.Update_Event = QueuedEvent()
-
-
-class KeyboardEvents:
-    list: Registered_Actions[
-        int | ENUMS.TYPE_ANY_TRIGGER,
-        KeyboardEvents,
-        Any,
-    ] = Registered_Actions()
+class MultiEventsLists(EventsList):
     __slots__ = ()
 
-    context = State_EventContext()
+
+class FrameEventsQueue(MultiEventsLists):
+    __slots__ = "before", "after"
 
     def __init__(self) -> None:
-        self.context.activated_event = self
+        self.before = EventsList[Self]()
+        self.after = EventsList[Self]()
 
 
-class PygameEvents:
-    __slots__ = ()
+class StateEventsQueue(MultiEventsLists):
+    __slots__ = "Draw_Events_Queue", "Update_Events_Queue"
 
-    context: State_EventContext[PygameEvents] = State_EventContext["PygameEvents"]()
-
-    Events_List: Registered_Actions[
-        int,
-        PygameEvents,
-        Any,
-    ] = Registered_Actions()
+    def __init__(self) -> None:
+        self.Draw_Events_Queue = FrameEventsQueue()
+        self.Update_Events_Queue = FrameEventsQueue()
 
 
 class EventsHandler:
     def __init__(self) -> None:
-        self.State_Events = StateEvents()
-        self.Keyboard_Event = KeyboardEvents()
-        self.Pygame_Event = PygameEvents()
+        self.State_Events = StateEventsQueue()
+
+        self.Keyboard_Event = KeyboardEventsQueue()
+        self.Pygame_Event = KeyboardEventsQueue()

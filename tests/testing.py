@@ -1,7 +1,7 @@
-from pygame_handler.system import main
+import pygame_handler
 
 # from contextlib import suppress
-game = main.Game()
+game = pygame_handler.main.Game()
 game.DEBUG_MODE=True
 # with suppress(NotImplementedError):
 game.run()

@@ -1,5 +1,9 @@
 from typing import Literal
 
+class NO_TRIGGERS:
+    type TYPE = Literal["{NONE}"]
+    VALUE = "{NONE}"
 
-type TYPE_ANY_TRIGGER = Literal["{ANY}"]
-ANY_TRIGGER = "{ANY}"
+class ALL_TRIGGERS:
+    type TYPE = Literal["{ALL}"]
+    VALUE = "{ALL}"

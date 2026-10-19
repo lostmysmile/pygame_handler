@@ -11,20 +11,20 @@ class Background:
         self.color = color
         self.image = image
         # TODO add image handler
-        # if self.image:
-        #     self.image_surf = pygame.image.load(self.image).convert_alpha()
-        # else:
-        #     self.image_surf = None
+        if self.image:
+            self.image_surf = pygame.image.load(self.image)
+        else:
+            self.image_surf = None
 
     def update(self):
         pass  # Placeholder for animation or updates
 
-    def draw(self, surf: pygame.Surface):
+    def draw_on(self, surf: pygame.Surface):
         if self.color is not None:
             surf.fill(self.color)
 
-        # if self.image_surf:
-        #     surf.blit(self.image_surf, (0, 0))
+        if self.image_surf:
+            surf.blit(self.image_surf, (0, 0))
 
 
 class Graphics_object:
@@ -34,7 +34,7 @@ class Graphics_object:
     def update(self):
         ...
 
-    def draw(self, surf: pygame.Surface, dest):
+    def draw_on(self, surf: pygame.Surface, dest):
         surf.blit(self.image, dest)
 
 
@@ -47,8 +47,8 @@ class Default_Entity_object:
     def update(self):
         self.graphics.update()
 
-    def draw(self, surf: pygame.Surface):
-        self.graphics.draw(surf, self.pos)
+    def draw_on(self, surf: pygame.Surface):
+        self.graphics.draw_on(surf, self.pos)
 
     @property
     def pos(self):
@@ -59,21 +59,22 @@ class EntitiesHandler:
     def __init__(self, l: list | None = None) -> None:
         self.entity_list: list[Default_Entity_object] = []
 
-    def update_and_draw(self, surf: pygame.Surface):
+    def update_and_drawOn(self, surf: pygame.Surface):
         for entity in self.entity_list:
-            entity.graphics.update()
-            entity.draw(surf)
+            entity.update()
+            entity.draw_on(surf)
 
     def update(self):
         for entity in self.entity_list:
             entity.update()
 
-    def draw(self, surf: pygame.Surface):
+    def draw_on(self, surf: pygame.Surface):
         for entity in self.entity_list:
-            entity.draw(surf)
+            entity.draw_on(surf)
 
     def __iter__(self):
         yield from self.entity_list
+
 class clock_handler:
     def __init__(self, fps_target: float = 60) -> None:
         self.fps_target: float = fps_target
@@ -112,9 +113,9 @@ class Window:
 
     def draw(self, state: Union[State, None] = None) -> None:
         if self.background:
-            self.background.draw(self.screen)
+            self.background.draw_on(self.screen)
         if state:
-            state.draw(self.screen)
+            state.draw_on(self.screen)
         pygame.display.flip()
 
 
