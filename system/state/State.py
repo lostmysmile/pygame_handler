@@ -1,7 +1,6 @@
 from itertools import chain
-from typing import NoReturn, Self
+from typing import Self
 from pygame.key import ScancodeWrapper
-from pygame.event import Event
 from collections import deque
 from typing import Optional
 
@@ -10,15 +9,16 @@ import pygame
 
 from pathlib import Path
 
-from system.state.events.events import State_EventContext, PygameEvents
 
 if __package__:
+    from sys import path as sys_path
     from .events import EventsHandler, State_EventContext, ENUMS as EVENT_NUMS
     from ..graphics import EntitiesHandler
 else:
     # from system import Default_Entity
     from sys import path as sys_path
-    sys_path.insert(0, Path(__file__).parent.parent.as_posix())
+    sys_path.append( Path(__file__).parent.parent.as_posix())
+    print(sys_path)
     from system.state.events import EventsHandler, State_EventContext, ENUMS as EVENT_NUMS
     from graphics import EntitiesHandler
 
@@ -53,19 +53,15 @@ class State:
         pass  # Default: do nothing
 
     def handle_pygame_events(self, pygame_events) -> None:
-        ctx: State_EventContext[PygameEvents] = self.events_handler.Pygame_Event.context
-        ctx.active_state = self
-        # for event in pygame_events:
-        #     print(event)
-        #     for listener in self.events_handler.Pygame_Event.Events_List:
-        #         if (event.type == (listener.trigger)):
-        #             listener.action(ctx)
+        (ctx := self.events_handler.Pygame_Event.context).active_state = self
 
-        handled = set()
-        events_and_listeners = chain(States.Global_Events.Pygame_Event.Events_List,
-                                     self.events_handler.Pygame_Event.Events_List)
         if not pygame_events:
             return
+
+        handled = set()
+        events_and_listeners = chain(
+            States.Global_Events.Pygame_Event.Events_List,
+            self.events_handler.Pygame_Event.Events_List)
 
         if self.handler.game_handler.DEBUG_MODE:
             print(f"Active pygame events: {pygame_events!r}")

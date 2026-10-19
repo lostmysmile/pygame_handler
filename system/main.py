@@ -6,12 +6,13 @@ from pygame.event import Event
 
 from pathlib import Path
 
+from sys import path as sys_path
 if __package__:
     from .state import State, States, NoMoreStates  # type: ignore
     from .graphics import Window, Background  # type: ignore
 else:
-    from sys import path as sys_path
-    sys_path.insert(0, Path(__file__).parent.parent.as_posix())
+    sys_path.append( Path(__file__).parent.parent.as_posix())
+    print(sys_path)
     from state import State, States, NoMoreStates  # type: ignore
     from graphics import Window, Background  # type: ignore
 

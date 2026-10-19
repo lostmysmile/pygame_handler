@@ -11,8 +11,9 @@ if TYPE_CHECKING:
 from typing import Any, Callable
 
 if __package__:
-    from system.state.events import ENUMS
+    from ..events import ENUMS
 else:
+    # from system.state.events import ENUMS
     import ENUMS
 
 

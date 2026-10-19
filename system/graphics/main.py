@@ -5,11 +5,14 @@ from pathlib import Path
 
 if __package__:
     from ..state import State
+    ...
 else:
+    
     # from system import Default_Entity
     from sys import path as sys_path
-    sys_path.insert(0, Path(__file__).parent.parent.as_posix())
-    from state import State
+    sys_path.append( Path(__file__).parent.parent.parent.as_posix())
+    from system.state import States
+    # from state.State import State
 
 
 class Background:
@@ -125,10 +128,6 @@ class Window:
 
 
 if __name__ == '__main__':
-    if __package__:
-        from ..state import States
-    else:
-        from state import States
 
     def main():
         bg = Background("white")
