@@ -39,7 +39,7 @@ class State:
         new_instance.name = name.format(State._counter)
         return new_instance
 
-    def __init__(self, handler: "States",name:str|None = None) -> None:
+    def __init__(self, handler: "States", name: str | None = None) -> None:
         self.name: str
         self.running = True
         self.handler = handler
@@ -58,9 +58,12 @@ class State:
 
     def handle_pygame_events(self, pygame_events: list[pygame.Event]) -> None:
         handled = set()
+
         events_and_listeners = chain(
             States.Global_Events.Pygame_Event.actions,
             self.events_handler.Pygame_Event.actions)
+
+        events_with_type = {event.type: event for event in pygame_events}
 
         if debugger.FLAGS.debug and debugger.FLAGS.detailed_info:
             print(events_and_listeners)
@@ -79,7 +82,7 @@ class State:
                 if event_trigger != EVENT_NUMS.ALL_TRIGGERS.VALUE:
                     print(f"Checking: {event_trigger!r}, {listeners!r}")
 
-            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (pygame.Event(event_trigger) in pygame_events):
+            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (event := events_with_type.get(event_trigger)):
                 for listener in listeners:
                     if listener.handle_once is True and listener.action in handled:
                         if debugger.FLAGS.debug and debugger.FLAGS.event_info:
@@ -94,8 +97,9 @@ class State:
                             )
                         else:
                             assert isinstance(event_trigger, int)
+                            if event is None:continue
                             print(
-                                f"handling {pygame.event.event_name(event_trigger)!r}"
+                                f"handling {event!r}"
                                 f"({event_trigger}) with",
                                 end="",
                             )
@@ -108,10 +112,10 @@ class State:
 
                     if isinstance(event_trigger, str):
                         ctx = State_EventContext(
-                            self, EVENT_NUMS.ALL_TRIGGERS.VALUE,dt=self.handler.game_handler.window.clock.dt)
+                            self, event, dt=self.handler.game_handler.window.clock.dt)
                     else:
                         ctx = State_EventContext(
-                            self, pygame_events[pygame_events.index(event_trigger)],dt=self.handler.game_handler.window.clock.dt)
+                            self, event, dt=self.handler.game_handler.window.clock.dt)
 
                     listener.action(ctx)
                     if listener.handle_once:
@@ -119,7 +123,7 @@ class State:
 
     def update(self, dt: float) -> None:
         ctx = State_EventContext(
-            self, self.events_handler.State_Events.Update_Events_Queue,dt=self.handler.game_handler.window.clock.dt)
+            self, self.events_handler.State_Events.Update_Events_Queue, dt=self.handler.game_handler.window.clock.dt)
 
         if debugger.FLAGS.debug:
             if debugger.FLAGS.state_context_info:
@@ -135,7 +139,8 @@ class State:
         self.events_handler.State_Events.Update_Events_Queue.after.invoke_internal(ctx)
 
     def draw_on(self, surf: pygame.Surface) -> None:
-        ctx = State_EventContext(self, self.events_handler.State_Events.Draw_Events_Queue,dt=self.handler.game_handler.window.clock.dt)
+        ctx = State_EventContext(self, self.events_handler.State_Events.Draw_Events_Queue,
+                                 dt=self.handler.game_handler.window.clock.dt)
 
         if debugger.FLAGS.debug and debugger.FLAGS.state_context_info:
             print("context:", ctx)
@@ -204,6 +209,6 @@ if __name__ == '__main__':
     states = States()
 
     def test_push_pop():
-        state = State(states,"custom name")
+        state = State(states, "custom name")
         print(state.name)
     test_push_pop()

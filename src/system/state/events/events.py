@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack
 import pygame
 
@@ -68,14 +68,14 @@ class functions_list[TriggerType:int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGE
     __slots__ = "iterable",
 
     def __init__(self) -> None:
-        self.iterable: dict[TriggerType,
+        self.iterable: defaultdict[TriggerType,
                             list[CallableInfo[[State_EventContext[EventContextType]], R]]
-                            ] = {}
+                            ] = defaultdict(list)
 
     def _register_internal(self,
                            trigger: TriggerType,
                            func_info: CallableInfo[[State_EventContext[EventContextType]], R]):
-        self.iterable.setdefault(trigger, list()).append(func_info)
+        self.iterable[trigger].append(func_info)
 
     def register(
         self,
