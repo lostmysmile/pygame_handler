@@ -55,8 +55,8 @@ class EventsList[R](Events_Iterable_Type):
     def __init__(self) -> None:
         self.actions: list[Callable[[State_EventContext[Self]], R]] = []
 
-    def invoke_internal(self, ctx: State_EventContext[Self]) -> Generator[R, None, None]:
-        return (action(ctx) for action in self.actions)
+    def invoke_internal(self, ctx: State_EventContext[Self]) -> list[R]:
+        return [action(ctx) for action in self.actions]
 
     def register(self, action: Callable[[State_EventContext[Self]], R]):
         self.actions.append((action))

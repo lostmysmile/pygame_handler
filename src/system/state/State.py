@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from itertools import chain
 from typing import Self, TYPE_CHECKING
@@ -34,10 +35,11 @@ class State:
 
     def __new__(cls, handler: "States", name: str = "<GenericState:{}>") -> Self:
         new_instance = super().__new__(cls)
+        State._counter += 1
         new_instance.name = name.format(State._counter)
         return new_instance
 
-    def __init__(self, handler: "States") -> None:
+    def __init__(self, handler: "States",name:str|None = None) -> None:
         self.name: str
         self.running = True
         self.handler = handler
@@ -74,10 +76,10 @@ class State:
                 continue
 
             if debugger.FLAGS.debug and debugger.FLAGS.event_info and debugger.FLAGS.detailed_info:
-                if event_trigger != EVENT_NUMS.ALL_TRIGGERS:
+                if event_trigger != EVENT_NUMS.ALL_TRIGGERS.VALUE:
                     print(f"Checking: {event_trigger!r}, {listeners!r}")
 
-            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS) or (event_trigger in pygame_events):
+            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (pygame.Event(event_trigger) in pygame_events):
                 for listener in listeners:
                     if listener.handle_once is True and listener.action in handled:
                         if debugger.FLAGS.debug and debugger.FLAGS.event_info:
@@ -86,9 +88,9 @@ class State:
                         continue
 
                     if debugger.FLAGS.debug and debugger.FLAGS.event_info:
-                        if event_trigger == EVENT_NUMS.ALL_TRIGGERS:
+                        if event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE:
                             print(
-                                f"handling <GENERIC_TRIGGER>{EVENT_NUMS.ALL_TRIGGERS!r} with", end="",
+                                f"handling <GENERIC_TRIGGER>{EVENT_NUMS.ALL_TRIGGERS.VALUE!r} with", end="",
                             )
                         else:
                             assert isinstance(event_trigger, int)
@@ -104,12 +106,12 @@ class State:
                         print(
                             f"Triggering: {listener.action!r} <HANDLE_ONCE={listener.handle_once!r}>")
 
-                    if isinstance(event_trigger,str ):
+                    if isinstance(event_trigger, str):
                         ctx = State_EventContext(
-                        self, EVENT_NUMS.ALL_TRIGGERS.VALUE)
+                            self, EVENT_NUMS.ALL_TRIGGERS.VALUE,dt=self.handler.game_handler.window.clock.dt)
                     else:
                         ctx = State_EventContext(
-                        self, pygame_events[pygame_events.index(event_trigger)])
+                            self, pygame_events[pygame_events.index(event_trigger)],dt=self.handler.game_handler.window.clock.dt)
 
                     listener.action(ctx)
                     if listener.handle_once:
@@ -117,7 +119,7 @@ class State:
 
     def update(self, dt: float) -> None:
         ctx = State_EventContext(
-            self, self.events_handler.State_Events.Update_Events_Queue)
+            self, self.events_handler.State_Events.Update_Events_Queue,dt=self.handler.game_handler.window.clock.dt)
 
         if debugger.FLAGS.debug:
             if debugger.FLAGS.state_context_info:
@@ -133,7 +135,7 @@ class State:
         self.events_handler.State_Events.Update_Events_Queue.after.invoke_internal(ctx)
 
     def draw_on(self, surf: pygame.Surface) -> None:
-        ctx = State_EventContext(self, self.events_handler.State_Events.Draw_Events_Queue)
+        ctx = State_EventContext(self, self.events_handler.State_Events.Draw_Events_Queue,dt=self.handler.game_handler.window.clock.dt)
 
         if debugger.FLAGS.debug and debugger.FLAGS.state_context_info:
             print("context:", ctx)
@@ -191,8 +193,6 @@ class States:
         return bool(self.deque)
 
 
-    
-
 @States.Global_Events.Pygame_Event.actions.decorator_register(pygame.QUIT)
 def QUIT(ctx: State_EventContext):
     ctx.active_state.running = False
@@ -204,6 +204,6 @@ if __name__ == '__main__':
     states = States()
 
     def test_push_pop():
-        state = State(states)
-
+        state = State(states,"custom name")
+        print(state.name)
     test_push_pop()
