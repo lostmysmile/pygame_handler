@@ -1,10 +1,9 @@
+
 name: Python tests
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,28 +11,23 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Run pytest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-          # 💡 Added caching so your game dependencies don't re-download every single time
-          cache: 'pip'
+          cache: pip
 
       - name: Install project and test dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[pygame,test]"
 
-      - name: Run Headless Pygame Tests
-        # 💡 Calls your custom script instead of raw pytest
-        run: ./.github/scripts/run-headless.sh
-
-      - name: Profile Suite Performance
-        if: always() # Runs even if your tests fail so you get metrics
-        uses: ./.github/actions/analyze-tests
+      - name: Run tests
+        run: python -m pytest -v

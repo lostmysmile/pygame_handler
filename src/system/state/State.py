@@ -56,7 +56,7 @@ class State:
         # raise NotImplementedError()
         pass  # Default: do nothing
 
-    def handle_pygame_events(self, pygame_events: list[pygame.Event]) -> None:
+    def handle_pygame_events(self, pygame_events: list[pygame.event.Event]) -> None:
         handled = set()
 
         events_and_listeners = chain(

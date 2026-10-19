@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict, namedtuple
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack
 import pygame
@@ -34,7 +36,7 @@ class CallableInfo[**P, R]:
         yield self.handle_once
 
 
-class State_EventContext[EventType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.Event]:
+class State_EventContext[EventType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.event.Event]:
     __slots__ = ("activated_event", "active_state", "dt")
 
     def __init__(self, active_state: State, activated_event: EventType, dt: Optional[int | float] = None) -> None:
