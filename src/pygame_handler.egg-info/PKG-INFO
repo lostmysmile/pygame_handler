@@ -1,7 +1,0 @@
-Metadata-Version: 2.4
-Name: pygame-handler
-Version: 0.1.0
-Provides-Extra: pygame
-Requires-Dist: pygame; extra == "pygame"
-Provides-Extra: pygame-ce
-Requires-Dist: pygame-ce; extra == "pygame-ce"
