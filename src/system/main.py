@@ -83,7 +83,7 @@ if __name__ == '__main__':
     def test1():
         game = Game()
 
-        game.DEFAULT_STATE.running = False
+        # game.DEFAULT_STATE.running = False# DEBUG
         from helper import debugger
         debugger.FLAGS.set_all(True)
         game.run_loop()
