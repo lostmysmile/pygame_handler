@@ -76,7 +76,7 @@ class EntitiesHandler:
         yield from self.entity_list
 
 class clock_handler:
-    def __init__(self, fps_target: float = 60) -> None:
+    def __init__(self, fps_target: float = 0) -> None:
         self.fps_target: float = fps_target
 
         self.dt: float = 0
@@ -84,8 +84,10 @@ class clock_handler:
 
         self.pygame_clock = pygame.time.Clock()
 
-    def tick(self) -> int:
+    def tick(self,new_tickrate:float|None=None) -> int:
         """Returns time since last frame in milliseconds"""
+        if new_tickrate:
+            self.fps_target = new_tickrate
         self.time_since_last_frame = self.pygame_clock.tick(self.fps_target)
         self.dt = self.time_since_last_frame / 1000.0
         return self.time_since_last_frame

@@ -1,3 +1,4 @@
+import math
 from typing import Optional
 
 import pygame
@@ -11,7 +12,65 @@ from .state import State, States, NoMoreStates  # type: ignore
 from .graphics import Window, Background  # type: ignore
 
 
+class movement_handler:
+    def __init__(self, handler: Game) -> None:
+        self.game_handler = handler
+
+    @property
+    def distance_error_amount(self):
+        "Convert ms to seconds for the final distance calculation"
+        return self.game_handler.window.clock.dt / 1000
+
+    def right(self, amount: float) -> float:
+        return self.distance_error_amount * amount
+
+    def left(self, amount: float) -> float:
+        return self.distance_error_amount * amount
+
+    def up(self, amount: float) -> float:
+        return self.distance_error_amount * amount
+
+    def down(self, amount: float) -> float:
+        return self.distance_error_amount * amount
+
+    def calculate_diagonal_movement(self, right: float, up: float):
+        # Calculate the total length of the input vector
+        length = math.sqrt(right**2 + up**2)
+
+        # If moving diagonally, length will be ~1.414.
+        # Dividing by length scales right and up down to ~0.7071 each.
+        if length > 0:
+            right /= length
+            up /= length
+
+        # Distance = Normalized Direction * Speed * Time
+        distance_x = right * self.distance_error_amount
+        distance_y = up * self.distance_error_amount
+
+        return distance_x, distance_y
+
+    class straight[Number:int | float]:
+        @staticmethod
+        def right(handler_engine: movement_handler, amount: Number) -> float:
+            return handler_engine.distance_error_amount * amount
+
+        @staticmethod
+        def left(handler_engine: movement_handler, amount: Number) -> float:
+            return handler_engine.distance_error_amount * amount
+
+        @staticmethod
+        def up(handler_engine: movement_handler, amount: Number) -> float:
+            return handler_engine.distance_error_amount * amount
+
+        @staticmethod
+        def down(handler_engine: movement_handler, amount: Number) -> float:
+            return handler_engine.distance_error_amount * amount
+
+
 class Game:
+    class Settings:
+        __slots__ = ()
+        speed_multiplier = 1
 
     def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
         if debugger.settings.init:
@@ -51,25 +110,34 @@ class Game:
         active_state = self.States.active_state
 
         while active_state.running:
+            """
+             !IMPLEMENT:
+             ! HALTING AND SKIPPING SYSTEM
+             ! FOR ACTIONS PERFORMED BY DISPATCHED CALLBACKS
+             ! ex: if state.running=False; pick if you want to skip all events or just this loop
+             ! make logic_events_dispatchers that run automatically above normal events and can be skipped too via special option"""
+
+            self.window.clock.tick()
+
             if debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Handling logic...")
-            self.main_logic()
 
+            self.main_logic()
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Finished logic.")
+                print("Updating state...")
 
-            if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
-                print("Updating...")
             active_state.update(self.window.clock.dt)
-
             if debugger.FLAGS.debug and debugger.FLAGS.states_info:
-                print("Updated.")
+                print("State update finished.")
+                print("Updating window...")
+
             self.window.update()
-
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
+                print("window update finished.")
                 print("Drawing...")
-            self.window.draw(active_state)
 
+            self.window.draw(active_state)
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Finished Drawing.")
 
