@@ -1,10 +1,10 @@
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 import pygame
 from pathlib import Path
 
-from ..state import State,States
-
+if TYPE_CHECKING:
+    from ..state.State import State
 
 class Background:
     def __init__(self, color: str | None = None, image: str | None = None) -> None:

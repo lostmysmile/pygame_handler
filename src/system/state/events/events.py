@@ -48,29 +48,21 @@ class Registered_Actions[TriggerType, EventContextType, R = Any]:
     __slots__ = "iterable",
 
     def __init__(self) -> None:
-        self.iterable: dict[TriggerType | ENUMS.TYPE_ANY_TRIGGER,
-                            set[registered_func[[State_EventContext[EventContextType]], R]]
-                            ] = {ENUMS.ANY_TRIGGER: set()}
+        self.iterable: dict[TriggerType | ENUMS.TYPE_ANY_TRIGGER | None,
+                            list[registered_func[[State_EventContext[EventContextType]], R]]
+                            ] = {ENUMS.ANY_TRIGGER: list()}
 
     def register(
         self,
-        trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER,
+        trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER |None ,
         func: Callable[[State_EventContext[EventContextType]], R],
         handle_once: bool = True,
     ):
-        new_func = registered_func(func, handle_once)
-        try:
-            trigger_set = self.iterable[trigger]
-        except KeyError:
-            trigger_set: set[
-                registered_func[[State_EventContext[EventContextType]], R]
-            ] = set()
-            self.iterable[trigger] = trigger_set
-        else:
-            trigger_set.add(new_func)
+
+        self.iterable.setdefault(trigger, list()).append(registered_func(func, handle_once))
 
     def decorator_register(self,
-                           trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER = ENUMS.ANY_TRIGGER,
+                           trigger: TriggerType | ENUMS.TYPE_ANY_TRIGGER | None = None,
                            handle_once: bool = True):
         def wrapper(
             func: Callable[[State_EventContext[EventContextType]], R]

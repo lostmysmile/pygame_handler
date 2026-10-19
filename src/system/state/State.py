@@ -78,11 +78,18 @@ class State:
         for event_trigger, listeners in events_and_listeners:
             if not listeners:
                 continue
+
+            if event_trigger is None:
+                if debugger.FLAGS.debug:
+                    print(f"Skipped trigger {None!r} for {listeners!r}")
+
+                continue
+            
             if debugger.FLAGS.debug:
                 if event_trigger != EVENT_NUMS.ANY_TRIGGER:
                     print(f"Checking: {event_trigger!r}, {listeners!r}")
-
-            if (event_trigger == EVENT_NUMS.ANY_TRIGGER) or (pygame.Event(event_trigger) in pygame_events):
+                    
+            if (event_trigger == EVENT_NUMS.ANY_TRIGGER) or (pygame.event.peek(event_trigger)):
                 for listener in listeners:
                     if listener.handle_once is True and listener.action in handled:
                         if debugger.FLAGS.debug:
@@ -203,7 +210,7 @@ class States:
         return bool(self.deque)
 
 
-@States.Global_Events.Pygame_Event.Events_List.decorator_register(EVENT_NUMS.ANY_TRIGGER)
+@States.Global_Events.Pygame_Event.Events_List.decorator_register(pygame.QUIT)
 def QUIT(ctx: State_EventContext):
     ctx.active_state.running = False
     print("ByeBye!")

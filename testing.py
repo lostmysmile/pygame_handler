@@ -1,4 +1,4 @@
-from system import main
+from pygame_handler.system import main
 
 # from contextlib import suppress
 game = main.Game()
