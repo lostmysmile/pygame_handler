@@ -5,7 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pygame-handler"
 version = "0.1.0"
-dependencies = ["pygame"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.optional-dependencies]
+pygame = ["pygame"]
+pygame-ce = ["pygame-ce"]

@@ -3,16 +3,7 @@ from typing import Union
 import pygame
 from pathlib import Path
 
-if __package__:
-    from ..state import State
-    ...
-else:
-    
-    # from system import Default_Entity
-    from sys import path as sys_path
-    sys_path.append( Path(__file__).parent.parent.parent.as_posix())
-    from system.state import States
-    # from state.State import State
+from ..state import State,States
 
 
 class Background:
@@ -90,7 +81,7 @@ class clock_handler:
         self.dt: float = 0
         self.time_since_last_frame: int = 0
 
-        self.pygame_clock = pygame.Clock()
+        self.pygame_clock = pygame.time.Clock()
 
     def tick(self) -> int:
         """Returns time since last frame in milliseconds"""

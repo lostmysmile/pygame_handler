@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Unpack
+from collections import namedtuple
+from typing import TYPE_CHECKING, Any, Callable, Unpack
 
 if TYPE_CHECKING:
     if __package__:
@@ -8,23 +9,18 @@ if TYPE_CHECKING:
     else:
         from state import State
 
-from typing import Any, Callable
 
-if __package__:
-    from ..events import ENUMS
-else:
-    # from system.state.events import ENUMS
-    import ENUMS
+from ..events import ENUMS
 
 
 class registered_func[**P, R]:
     __slots__ = "action", "handle_once"
 
-    def __init__(
-        self,
-        action: Callable[P, R],
-        handle_once: bool = True,
-    ):
+    def __init__(self,
+                 action: Callable[P, R],
+                 handle_once: bool = True,
+                 ):
+
         self.action: Callable[P, R] = action
         self.handle_once: bool = handle_once
 
@@ -34,12 +30,12 @@ class registered_func[**P, R]:
 
 
 class State_EventContext[EventType]:
-
     __slots__ = ("activated_event", "active_state", "dt")
 
-    dt: int
-    active_state: State
-    activated_event: EventType
+    def __init__(self) -> None:
+        self.dt: int
+        self.active_state: State
+        self.activated_event: EventType
 
     def update(self, dt=None, active_state=None):
         if active_state is not None:
@@ -49,9 +45,12 @@ class State_EventContext[EventType]:
 
 
 class Registered_Actions[TriggerType, EventContextType, R = Any]:
-    iterable: dict[TriggerType | ENUMS.TYPE_ANY_TRIGGER,
-                   set[registered_func[[State_EventContext[EventContextType]], R]]
-                   ] = {ENUMS.ANY_TRIGGER: set()}
+    __slots__ = "iterable",
+
+    def __init__(self) -> None:
+        self.iterable: dict[TriggerType | ENUMS.TYPE_ANY_TRIGGER,
+                            set[registered_func[[State_EventContext[EventContextType]], R]]
+                            ] = {ENUMS.ANY_TRIGGER: set()}
 
     def register(
         self,
@@ -94,11 +93,10 @@ class Registered_Actions[TriggerType, EventContextType, R = Any]:
 
 
 class Event:
-    __slots__ = "actions",
-
-    context = State_EventContext["Event"]()
+    __slots__ = "actions", "context"
 
     def __init__(self) -> None:
+        self.context = State_EventContext["Event"]()
         self.actions: list[Callable[[State_EventContext[Event]], Any]] = []
 
     def invoke_internal(self):

@@ -18,7 +18,6 @@ else:
 
 
 class Game:
-    DEBUG_MODE: bool = False
 
     def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
         self.States = States(self)
