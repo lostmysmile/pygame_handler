@@ -13,8 +13,19 @@ if TYPE_CHECKING:
 from ..events import ENUMS
 
 
-class Events_Iterable_Type:
-    __slots__ = ()
+class EventContext[EventType]:
+    __slots__ = ("triggered_event", "active_state", "dt")
+
+    def __init__(self, active_state: State, triggered_event: EventType, dt: Optional[int | float] = None) -> None:
+        self.active_state: State = active_state
+        self.triggered_event: EventType = triggered_event
+        self.dt: int | float | None = dt
+
+    def update(self, dt=None, active_state=None):
+        if active_state is not None:
+            self.active_state = active_state
+        if dt is not None:
+            self.dt = dt
 
 
 class CallableInfo[**P, R]:
@@ -36,32 +47,110 @@ class CallableInfo[**P, R]:
         yield self.handle_once
 
 
-class State_EventContext[EventType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.event.Event]:
-    __slots__ = ("activated_event", "active_state", "dt")
-
-    def __init__(self, active_state: State, activated_event: EventType, dt: Optional[int | float] = None) -> None:
-        self.active_state: State = active_state
-        self.activated_event: EventType = activated_event
-        self.dt: int | float | None = dt
-
-    def update(self, dt=None, active_state=None):
-        if active_state is not None:
-            self.active_state = active_state
-        if dt is not None:
-            self.dt = dt
-
-
-class EventsList[R](Events_Iterable_Type):
-    __slots__ = ("actions",)
+class RegisteredFuncs[EventContextType, R]:
+    __slots__ = ("registered_actions",)
 
     def __init__(self) -> None:
-        self.actions: list[Callable[[State_EventContext[Self]], R]] = []
+        self.registered_actions: list[CallableInfo[[
+            EventContext[EventContextType]], R]] = []
 
-    def invoke_internal(self, ctx: State_EventContext[Self]) -> list[R]:
-        return [action(ctx) for action in self.actions]
+    def __iter__(self):
+        yield from self.registered_actions
 
-    def register(self, action: Callable[[State_EventContext[Self]], R]):
-        self.actions.append((action))
+    def _invoke_all(self, ctx: EventContext[EventContextType]) -> list[tuple[CallableInfo[[EventContext[EventContextType]], R], R]]:
+        return [(action_info, action_info.action(ctx)) for action_info in self.registered_actions]
+
+    def register(self, action: Callable[[EventContext[EventContextType]], R], handle_once=True):
+        new_func = CallableInfo(action, handle_once=handle_once)
+        self.registered_actions.append(new_func)
+        return action
+
+
+allowed_trigger_types = ()
+(pygame.event.Event, pygame.key.ScancodeWrapper,
+ ENUMS.ALL_TRIGGERS.TYPE, ENUMS.NO_TRIGGERS.TYPE)
+
+
+class EventsList[TriggerType,
+                 EventContextType,
+                 R = Any]:
+
+    __slots__ = "registered_actions",
+
+    def __init__(self) -> None:
+        self.registered_actions: defaultdict[TriggerType,
+                                             RegisteredFuncs
+                                             ] = defaultdict(RegisteredFuncs)
+
+    def _register_internal(self,
+                           trigger: TriggerType,
+                           func: Callable[[EventContext[EventContextType]], R],
+                           handle_once=True):
+        if (type(trigger)) not in allowed_trigger_types:
+            raise TypeError(f"unknown trigger type: {type(trigger)}")
+        self.registered_actions[trigger].register(func, handle_once=handle_once)
+        return func
+
+    def register(
+        self,
+        triggers: Optional[
+            TriggerType |
+            Iterable[TriggerType]
+        ],
+        func: Callable[[EventContext[EventContextType]], R],
+        handle_once: bool = True,
+
+    ):
+        if not callable(func):
+            raise TypeError(f"Expected callable for func got: {func}")
+
+        if (isinstance((triggers), (str, pygame.key.ScancodeWrapper, pygame.event.Event))):
+            result = (
+                self._register_internal(triggers, func, handle_once=handle_once))
+
+        elif isinstance(triggers, Iterable):
+            result = [
+                self._register_internal(trigger, func, handle_once=handle_once)
+                for trigger in triggers]
+        elif triggers is None:
+            result = (
+                self._register_internal(ENUMS.NO_TRIGGERS.VALUE,
+                                        func, handle_once=handle_once))
+        else:
+            raise TypeError(f"Unknown trigger type: {triggers} of type {type(triggers)}")
+
+        if debugger.FLAGS.debug and debugger.FLAGS.event_registers:
+            print(f"Registered {func!s} with trigger: {triggers!r}")
+
+        return result
+
+    def decorator_register(self,
+                           triggers: Optional[
+                               TriggerType |
+                               Iterable[TriggerType]
+                           ] = ENUMS.NO_TRIGGERS.VALUE,
+                           handle_once: bool = True,
+                           ):
+        def wrapper(
+            func: Callable[[EventContext[EventContextType]], R]
+        ):
+
+            return self.register(triggers=triggers, func=func,
+                                 handle_once=handle_once)
+
+        return wrapper
+
+    @property
+    def registered_triggers(self):
+        yield from self.registered_actions.keys()
+
+    @property
+    def registered_events(self):
+        yield from self.registered_actions.values()
+
+    def __iter__(self):
+        yield from self.registered_actions.items()
+
 
 class OptionsEnabledList():
     """
@@ -76,121 +165,24 @@ class OptionsEnabledList():
     ...
 
 
-class functions_list[TriggerType:int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGERS.TYPE | None,
-                     EventContextType:Events_Iterable_Type | pygame.key.ScancodeWrapper | pygame.event.Event,
-                     R= Any]:
-    __slots__ = "iterable",
-
-    def __init__(self) -> None:
-        self.iterable: defaultdict[TriggerType,
-                            list[CallableInfo[[State_EventContext[EventContextType]], R]]
-                            ] = defaultdict(list)
-
-    def _register_internal(self,
-                           trigger: TriggerType,
-                           func_info: CallableInfo[[State_EventContext[EventContextType]], R]):
-        if func_info.action is None:
-            raise ValueError("Cannot register NoneType")
-        self.iterable[trigger].append(func_info)
-
-    def register(
-        self,
-        triggers: Optional[
-            TriggerType |
-            Iterable[TriggerType]
-        ] = ENUMS.NO_TRIGGERS.VALUE,
-        func: Optional[Callable[[State_EventContext[EventContextType]], R]] = None,
-        handle_once: bool = True,
-        *,
-        func_info: Optional[CallableInfo[[
-            State_EventContext[EventContextType]], R]] = None
-    ):
-        new_func = func_info or CallableInfo(func, handle_once)  # type: ignore
-    
-        if (isinstance((triggers), str )):
-            self._register_internal(triggers, new_func)
-
-        elif isinstance(triggers, int):
-            self._register_internal(triggers, new_func)
-
-        elif isinstance(triggers, Iterable):
-            for trigger in triggers:
-                self._register_internal(trigger, new_func)
-
-        else:
-            raise TypeError(f"Unknown trigger type: {triggers} of type {type(triggers)}")
-
-
-        if debugger.FLAGS.debug and debugger.FLAGS.event_registers:
-            print(f"Registered {new_func!s} with trigger: {triggers!r}")
-        return func
-
-    def decorator_register(self,
-                           triggers: Optional[
-                               TriggerType |
-                               Iterable[TriggerType]
-                           ] = ENUMS.NO_TRIGGERS.VALUE,
-                           func: Optional[Callable[[
-                               State_EventContext[EventContextType]], R]] = None,
-                           handle_once: bool = True,
-                           *,
-                           func_info: Optional[CallableInfo[[State_EventContext[EventContextType]], R]] = None):
-        def wrapper(
-            func: Callable[[State_EventContext[EventContextType]], R]
-        ):
-
-            self.register(triggers=triggers, func=func,
-                          handle_once=handle_once, func_info=func_info)
-            return func
-
-        return wrapper
-
-    @property
-    def registered_triggers(self):
-        yield from self.iterable.keys()
-
-    @property
-    def registered_events(self):
-        yield from self.iterable.values()
-
-    def __iter__(self):
-        yield from self.iterable.items()
-
-
-class KeyboardEventsQueue(Events_Iterable_Type):
-    __slots__ = ("actions",)
-
-    def __init__(self) -> None:
-        self.actions: functions_list[
-            int | ENUMS.ALL_TRIGGERS.TYPE | ENUMS.NO_TRIGGERS.TYPE,
-            pygame.event.Event,
-            Any,
-        ] = functions_list()
-
-
-class MultiEventsLists(EventsList):
-    __slots__ = ()
-
-
-class FrameEventsQueue(MultiEventsLists):
+class EventsQueue:
     __slots__ = "before", "after"
 
     def __init__(self) -> None:
-        self.before = EventsList[Self]()
-        self.after = EventsList[Self]()
+        self.before = RegisteredFuncs()
+        self.after = RegisteredFuncs()
 
 
-class StateEventsQueue(MultiEventsLists):
-    __slots__ = "Draw_Events_Queue", "Update_Events_Queue"
+class StateEvents:
+    __slots__ = "draw_events_Queue", "update_events_Queue"
 
     def __init__(self) -> None:
-        self.Draw_Events_Queue = FrameEventsQueue()
-        self.Update_Events_Queue = FrameEventsQueue()
+        self.draw_events_Queue = EventsQueue()
+        self.update_events_Queue = EventsQueue()
 
 
 class EventsHandler:
     def __init__(self) -> None:
-        self.State_Events = StateEventsQueue()
-
-        self.Keyboard_Event = KeyboardEventsQueue()
-        self.Pygame_Event = KeyboardEventsQueue()
+        self.State_Events = StateEvents()
+        self.Keyboard_Event = RegisteredFuncs()
+        self.Pygame_Event = RegisteredFuncs()

@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 from sys import path as sys_path
-from .events import EventsHandler, State_EventContext, events, ENUMS as EVENT_NUMS
+from .events import EventsHandler, EventContext, events, ENUMS as EVENT_NUMS
 from ..graphics import EntitiesHandler
 
 
@@ -60,8 +60,8 @@ class State:
         handled = set()
 
         events_and_listeners = chain(
-            States.Global_Events.Pygame_Event.actions,
-            self.events_handler.Pygame_Event.actions)
+            States.Global_Events.Pygame_Event.registered_actions,
+            self.events_handler.Pygame_Event.registered_actions)
 
         events_with_type = {event.type: event for event in pygame_events}
 
@@ -83,7 +83,7 @@ class State:
                     print(f"Checking: {event_trigger!r}, {listeners!r}")
 
             event = events_with_type.get(event_trigger)
-            
+
             if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (event is not None):
                 for listener in listeners:
                     if listener.handle_once is True and listener.action in handled:
@@ -110,50 +110,46 @@ class State:
                     if debugger.FLAGS.debug and debugger.FLAGS.event_info:
                         print(
                             f"Triggering: {listener.action!r} <HANDLE_ONCE={listener.handle_once!r}>")
-                    
-                    if isinstance(event_trigger, str):
-                        ctx = State_EventContext(
-                            self, event or self.events_handler.Pygame_Event, dt=self.handler.game_handler.window.clock.dt)
-                    else:
-                        ctx = State_EventContext(
-                            self, event or self.events_handler.Pygame_Event, dt=self.handler.game_handler.window.clock.dt)
+
+                    ctx = EventContext(
+                        self, event or self.events_handler.Pygame_Event, dt=self.handler.game_handler.window.clock.dt)
 
                     listener.action(ctx)
                     if listener.handle_once:
                         handled.add(listener.action)
 
     def update(self, dt: float) -> None:
-        ctx = State_EventContext(
-            self, self.events_handler.State_Events.Update_Events_Queue, dt=dt)
+        ctx = EventContext(
+            self, self.events_handler.State_Events.update_events_Queue, dt=dt)
 
         if debugger.FLAGS.debug:
             if debugger.FLAGS.state_context_info:
                 print("context:", ctx)
-        self.handler.Global_Events.State_Events.Update_Events_Queue.before.invoke_internal(
+        self.handler.Global_Events.State_Events.update_events_Queue.before._invoke_all(
             ctx)
-        self.events_handler.State_Events.Update_Events_Queue.before.invoke_internal(ctx)
+        self.events_handler.State_Events.update_events_Queue.before._invoke_all(ctx)
 
         self.entities.update()
 
-        self.handler.Global_Events.State_Events.Update_Events_Queue.after.invoke_internal(
+        self.handler.Global_Events.State_Events.update_events_Queue.after._invoke_all(
             ctx)
-        self.events_handler.State_Events.Update_Events_Queue.after.invoke_internal(ctx)
+        self.events_handler.State_Events.update_events_Queue.after._invoke_all(ctx)
 
     def draw_on(self, surf: pygame.Surface) -> None:
-        ctx = State_EventContext(self, self.events_handler.State_Events.Draw_Events_Queue)
+        ctx = EventContext(self, self.events_handler.State_Events.draw_events_Queue)
 
         if debugger.FLAGS.debug and debugger.FLAGS.state_context_info:
             print("context:", ctx)
 
-        self.handler.Global_Events.State_Events.Draw_Events_Queue.before.invoke_internal(
+        self.handler.Global_Events.State_Events.draw_events_Queue.before._invoke_all(
             ctx)
-        self.events_handler.State_Events.Draw_Events_Queue.before.invoke_internal(ctx)
+        self.events_handler.State_Events.draw_events_Queue.before._invoke_all(ctx)
 
         self.entities.draw_on(surf)
 
-        self.handler.Global_Events.State_Events.Draw_Events_Queue.after.invoke_internal(
+        self.handler.Global_Events.State_Events.draw_events_Queue.after._invoke_all(
             ctx)
-        self.events_handler.State_Events.Draw_Events_Queue.after.invoke_internal(ctx)
+        self.events_handler.State_Events.draw_events_Queue.after._invoke_all(ctx)
 
 
 class States:
@@ -169,7 +165,7 @@ class States:
         self.active_state = self.default_state
 
         self.deque.append(self.default_state)
-        self.default_state.events_handler.Pygame_Event.actions.register(
+        self.default_state.events_handler.Pygame_Event.registered_actions.register(
             pygame.QUIT, QUIT)
 
     def activate_previous_state(self):
@@ -198,8 +194,8 @@ class States:
         return bool(self.deque)
 
 
-@States.Global_Events.Pygame_Event.actions.decorator_register(pygame.QUIT)
-def QUIT(ctx: State_EventContext):
+@States.Global_Events.Pygame_Event.registered_actions.decorator_register(pygame.QUIT)
+def QUIT(ctx: EventContext):
     ctx.active_state.running = False
     print("Quitting...")
     return debugger.show_log("Quitting...")

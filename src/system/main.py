@@ -111,7 +111,7 @@ class Game:
 
         while active_state.running:
             """
-             !IMPLEMENT:
+             TODO IMPLEMENT:
              ! HALTING AND SKIPPING SYSTEM
              ! FOR ACTIONS PERFORMED BY DISPATCHED CALLBACKS
              ! ex: if state.running=False; pick if you want to skip all events or just this loop

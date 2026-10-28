@@ -18,7 +18,7 @@ class FLAGS:
     state_context_info = False
     states_transitions = False
 
-    #TODO ADD TIMERS FOR EACH STEP
+    #TODO ADD TIMERS FOR PROFILING EACH STEP OF THE CODE
     time_internals_=False
 
     @classmethod

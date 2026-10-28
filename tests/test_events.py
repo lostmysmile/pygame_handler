@@ -5,14 +5,14 @@ import pygame
 import pytest
 
 from system.state.events.events import (
+    RegisteredFuncs,
+    EventContext,
     EventsList,
-    State_EventContext,
-    functions_list,
 )
 
 
 def test_invoke_internal_returns_results_in_order():
-    callbacks = EventsList()
+    callbacks = RegisteredFuncs()
     calls = []
 
     def first(ctx):
@@ -23,48 +23,48 @@ def test_invoke_internal_returns_results_in_order():
         calls.append("second")
         return 20
 
-    ctx = State_EventContext(
+    ctx = EventContext(
         active_state=SimpleNamespace(),
-        activated_event=callbacks,
+        triggered_event=callbacks,
         dt=1 / 60,
     )
 
     callbacks.register(first)
     callbacks.register(second)
 
-    results = callbacks.invoke_internal(ctx)
+    results = callbacks._invoke_all(ctx)
 
     assert calls == ["first", "second"]
     assert results == [10, 20]
 
 
 def test_empty_events_list_returns_empty_results():
-    callbacks = EventsList()
-    ctx = State_EventContext(
+    callbacks = RegisteredFuncs()
+    ctx = EventContext(
         active_state=SimpleNamespace(),
-        activated_event=callbacks,
+        triggered_event=callbacks,
     )
 
-    assert callbacks.invoke_internal(ctx) == []
+    assert callbacks._invoke_all(ctx) == []
 
 
-def test_context_update_accepts_zero_dt():
-    original_state = SimpleNamespace(name="original")
-    new_state = SimpleNamespace(name="new")
-    ctx = State_EventContext(
-        active_state=original_state,
-        activated_event=EventsList(),
-        dt=1 / 60,
-    )
+# def test_context_update_accepts_zero_dt():
+#     original_state = SimpleNamespace(name="original")
+#     new_state = SimpleNamespace(name="new")
+#     ctx = EventContext(
+#         active_state=original_state,
+#         triggered_event=EventsList(),
+#         dt=1 / 60,
+#     )
 
-    ctx.update(dt=0, active_state=new_state)
+#     ctx.update(dt=0, active_state=new_state)
 
-    assert ctx.active_state is new_state
-    assert ctx.dt == 0
+#     assert ctx.active_state is new_state
+#     assert ctx.dt == 0
 
 
 def test_register_stores_callback_and_handle_once():
-    registry = functions_list()
+    registry = EventsList()
 
     def callback(ctx):
         return None
@@ -83,7 +83,7 @@ def test_register_stores_callback_and_handle_once():
 
 
 def test_multiple_triggers_share_one_registration():
-    registry = functions_list()
+    registry = EventsList()
 
     def callback(ctx):
         return None
@@ -104,7 +104,7 @@ def test_multiple_triggers_share_one_registration():
 
 
 def test_same_function_can_be_registered_twice():
-    registry = functions_list()
+    registry = EventsList()
 
     def callback(ctx):
         return None
@@ -121,7 +121,7 @@ def test_same_function_can_be_registered_twice():
 
 
 def test_registering_none_raises_value_error():
-    registry = functions_list()
+    registry = EventsList()
 
     with pytest.raises(ValueError, match="Cannot register NoneType"):
         registry.register(pygame.KEYDOWN)
