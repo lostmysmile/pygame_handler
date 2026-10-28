@@ -76,7 +76,7 @@ class Game:
         if debugger.settings.init:
             print("Initializing...")
 
-        self.States = States(self)
+        self.States = States().with_handler(self)
         self.DEFAULT_STATE = self.States.default_state
 
         self.window = Window(
@@ -96,16 +96,15 @@ class Game:
         active_state.handle_pygame_events(triggered_events)
 
     def run_loop(self):
-        if self.States:
-            self.States.activate_next_state()
-            self.States.prev_state = None  # remove default state from deque
-
+        if not self.States:
             if debugger.FLAGS.states_transitions:
-                print("Using user-defined State:", self.States.active_state)
-                print("Removed Default state.")
-        else:
-            if debugger.FLAGS.states_transitions:
+                print("No states found.")
                 print("Using Default State.")
+            self.States.deque.append(self.States.default_state)
+
+        self.States.activate_next_state()
+        # self.States.prev_state = None  # remove default state from 
+
 
         active_state = self.States.active_state
 
@@ -141,6 +140,9 @@ class Game:
             if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
                 print("Finished Drawing.")
 
+            if debugger.debug.run_once is True:
+                break
+
         if debugger.settings.goodbye:
             print("Bye bye!")
 
@@ -154,5 +156,6 @@ if __name__ == '__main__':
         # game.DEFAULT_STATE.running = False# DEBUG
         from helper import debugger
         debugger.FLAGS.set_all(True)
+        debugger.debug.run_once = True
         game.run_loop()
     test1()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from itertools import chain
 from typing import Self, TYPE_CHECKING
 from pygame.key import ScancodeWrapper
-from collections import deque
+from collections import defaultdict, deque
 from typing import Optional
 
 
@@ -18,34 +18,42 @@ from pathlib import Path
 
 
 from sys import path as sys_path
-from .events import EventsHandler, EventContext, events, ENUMS as EVENT_NUMS
+from .events import EventsHandler, StateEventContext,DrawEventContext, events, ENUMS as EVENT_NUMS
 from ..graphics import EntitiesHandler
 
 
-class NoMoreStates(StopIteration):
+class NoMoreStates(Exception):
     ...
 
 
-class NoPreviousStates(StopIteration):
+class NoPreviousStates(Exception):
     ...
 
+def name_counter(name:str,names=defaultdict[str,int](int)):
+    return names[name]
 
 class State:
-    _counter = 0
+    _counter = -1
 
     def __new__(cls, handler: "States", name: str = "<GenericState:{}>") -> Self:
-        new_instance = super().__new__(cls)
         State._counter += 1
-        new_instance.name = name.format(State._counter)
+        new_instance = super().__new__(cls)
+        new_instance.name = name.format(name_counter(name))
         return new_instance
 
-    def __init__(self, handler: "States", name: str | None = None) -> None:
+    def __init__(self, handler: "States", name: str) -> None:
         self.name: str
         self.running = True
         self.handler = handler
         self.entities = EntitiesHandler()
         self.events_handler = EventsHandler()
 
+    def __str__(self):
+        return f"<State[{self.name!r}]>"
+
+    def __repr__(self) -> str:
+        return f"<State[{self.name!r}] at 0x{id(self):016x}>"
+        
     def handle_keyboard_input(self, keys: ScancodeWrapper) -> None:
         pygame.key.set_text_input_rect
         keys_stream = pygame.key.get_pressed()
@@ -57,21 +65,20 @@ class State:
         pass  # Default: do nothing
 
     def handle_pygame_events(self, pygame_events: list[pygame.event.Event]) -> None:
-        handled = set()
-
-        events_and_listeners = chain(
-            States.Global_Events.Pygame_Event.registered_actions,
-            self.events_handler.Pygame_Event.registered_actions)
 
         events_with_type = {event.type: event for event in pygame_events}
 
-        if debugger.FLAGS.debug and debugger.FLAGS.detailed_info:
-            print(events_and_listeners)
+        events_and_listeners = chain(
+            States.Global_Events.Pygame_Event,
+            self.events_handler.Pygame_Event
+        )
+
+        # if debugger.FLAGS.debug and debugger.FLAGS.detailed_info:
+        #     print((events_and_listeners))
+
+        handled = set()
 
         for event_trigger, listeners in events_and_listeners:
-            if not listeners:
-                continue
-
             if event_trigger == EVENT_NUMS.NO_TRIGGERS.VALUE:
                 if debugger.FLAGS.debug and debugger.FLAGS.event_info:
                     print(f"<{event_trigger!r}<no-trigger> for {listeners!r}")
@@ -82,11 +89,11 @@ class State:
                 if event_trigger != EVENT_NUMS.ALL_TRIGGERS.VALUE:
                     print(f"Checking: {event_trigger!r}, {listeners!r}")
 
-            event = events_with_type.get(event_trigger)
+            event = events_with_type.get(event_trigger)  # type: ignore
 
             if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (event is not None):
                 for listener in listeners:
-                    if listener.handle_once is True and listener.action in handled:
+                    if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP and listener.action in handled:
                         if debugger.FLAGS.debug and debugger.FLAGS.event_info:
                             print(
                                 f"Skipped {listener.action!r}; Has already been triggered")
@@ -109,17 +116,17 @@ class State:
 
                     if debugger.FLAGS.debug and debugger.FLAGS.event_info:
                         print(
-                            f"Triggering: {listener.action!r} <HANDLE_ONCE={listener.handle_once!r}>")
+                            f"Triggering {listener.invocation_policy}: {listener.action!r} ")
 
-                    ctx = EventContext(
+                    ctx = StateEventContext(
                         self, event or self.events_handler.Pygame_Event, dt=self.handler.game_handler.window.clock.dt)
 
                     listener.action(ctx)
-                    if listener.handle_once:
+                    if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP:
                         handled.add(listener.action)
 
     def update(self, dt: float) -> None:
-        ctx = EventContext(
+        ctx = StateEventContext(
             self, self.events_handler.State_Events.update_events_Queue, dt=dt)
 
         if debugger.FLAGS.debug:
@@ -136,7 +143,7 @@ class State:
         self.events_handler.State_Events.update_events_Queue.after._invoke_all(ctx)
 
     def draw_on(self, surf: pygame.Surface) -> None:
-        ctx = EventContext(self, self.events_handler.State_Events.draw_events_Queue)
+        ctx = DrawEventContext(self)
 
         if debugger.FLAGS.debug and debugger.FLAGS.state_context_info:
             print("context:", ctx)
@@ -151,22 +158,41 @@ class State:
             ctx)
         self.events_handler.State_Events.draw_events_Queue.after._invoke_all(ctx)
 
+    def on_leave(self):
+        ctx = StateEventContext(self, States.Global_Events.State_Events.on_leave)
+        if debugger.FLAGS.states_transitions:
+            print("Leaving", self, "...")
+        States.Global_Events.State_Events.on_leave._invoke_all(ctx)
+        self.events_handler.State_Events.on_leave._invoke_all(ctx)
+
+    def on_enter(self):
+        ctx = StateEventContext(self, States.Global_Events.State_Events.on_enter)
+        if debugger.FLAGS.states_transitions:
+            print("Entering", self, "...")
+        States.Global_Events.State_Events.on_enter._invoke_all(ctx)
+        self.events_handler.State_Events.on_enter._invoke_all(ctx)
+
 
 class States:
     Global_Events = EventsHandler()
 
-    def __init__(self, handler: Game) -> None:
+    def __init__(self) -> None:
         self.prev_state: Optional[State] = None
+        self.active_state: State
 
-        self.game_handler = handler
         self.deque: deque[State] = deque()
 
-        self.default_state = State(self)
-        self.active_state = self.default_state
+        self.default_state = State(self, "Default State")
 
-        self.deque.append(self.default_state)
-        self.default_state.events_handler.Pygame_Event.registered_actions.register(
-            pygame.QUIT, QUIT)
+    def __bool__(self):
+        return bool(self.deque)
+
+    def __iter__(self):
+        yield from self.deque
+
+    def with_handler(self, handler: Game):
+        self.game_handler = handler
+        return self
 
     def activate_previous_state(self):
         if self.prev_state is None:
@@ -175,27 +201,34 @@ class States:
         if debugger.FLAGS.debug and debugger.FLAGS.states_transitions:
             print(f"Switching state from: {self.active_state} to {self.prev_state}")
 
+        self.active_state.on_leave()
+        self.prev_state.on_enter()
         self.active_state = self.prev_state
+
         self.deque.appendleft(self.prev_state)
         self.prev_state = None
 
     def activate_next_state(self):
-        self.prev_state = self.active_state or self.default_state
+        try:
+            self.prev_state = self.active_state
+        except AttributeError:
+            ...
+        else:
+            self.prev_state.on_leave()
 
         try:
             self.active_state = self.deque.pop()
         except IndexError:
             raise NoMoreStates("No states left in queue") from None
+        else:
+            self.active_state.on_enter()
 
         if debugger.FLAGS.debug and debugger.FLAGS.states_transitions:
             print(f"Switching state from: {self.prev_state} to {self.active_state}")
 
-    def __bool__(self):
-        return bool(self.deque)
 
-
-@States.Global_Events.Pygame_Event.registered_actions.decorator_register(pygame.QUIT)
-def QUIT(ctx: EventContext):
+@States.Global_Events.Pygame_Event.decorator_register(pygame.QUIT)
+def QUIT(ctx: StateEventContext):
     ctx.active_state.running = False
     print("Quitting...")
     return debugger.show_log("Quitting...")

@@ -6,7 +6,9 @@ import pygame
 from pathlib import Path
 
 if TYPE_CHECKING:
-    from ..state.State import State
+    from ..state.State import State, States
+
+
 class Background:
     def __init__(self, color: str | None = None, image: str | None = None) -> None:
         self.color = color
@@ -73,8 +75,13 @@ class EntitiesHandler:
         for entity in self.entity_list:
             entity.draw_on(surf)
 
+    def start(self):
+        # TODO IMPLEMENT
+        ...
+
     def __iter__(self):
         yield from self.entity_list
+
 
 class clock_handler:
     def __init__(self, fps_target: float = 0) -> None:
@@ -85,7 +92,7 @@ class clock_handler:
 
         self.pygame_clock = pygame.time.Clock()
 
-    def tick(self,new_tickrate:float|None=None) -> int:
+    def tick(self, new_tickrate: float | None = None) -> int:
         """Returns time since last frame in milliseconds"""
         if new_tickrate:
             self.fps_target = new_tickrate

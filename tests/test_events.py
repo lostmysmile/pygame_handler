@@ -5,14 +5,14 @@ import pygame
 import pytest
 
 from system.state.events.events import (
-    RegisteredFuncs,
-    EventContext,
-    EventsList,
+    Callbacks,
+    StateEventContext,
+    EventsDict,
 )
 
 
 def test_invoke_internal_returns_results_in_order():
-    callbacks = RegisteredFuncs()
+    callbacks = Callbacks()
     calls = []
 
     def first(ctx):
@@ -23,7 +23,7 @@ def test_invoke_internal_returns_results_in_order():
         calls.append("second")
         return 20
 
-    ctx = EventContext(
+    ctx = StateEventContext(
         active_state=SimpleNamespace(),
         triggered_event=callbacks,
         dt=1 / 60,
@@ -39,8 +39,8 @@ def test_invoke_internal_returns_results_in_order():
 
 
 def test_empty_events_list_returns_empty_results():
-    callbacks = RegisteredFuncs()
-    ctx = EventContext(
+    callbacks = Callbacks()
+    ctx = StateEventContext(
         active_state=SimpleNamespace(),
         triggered_event=callbacks,
     )
@@ -64,7 +64,7 @@ def test_empty_events_list_returns_empty_results():
 
 
 def test_register_stores_callback_and_handle_once():
-    registry = EventsList()
+    registry = EventsDict()
 
     def callback(ctx):
         return None
@@ -72,7 +72,7 @@ def test_register_stores_callback_and_handle_once():
     registry.register(
         pygame.KEYDOWN,
         callback,
-        handle_once=False,
+        invocation_policy=False,
     )
 
     entries = dict(registry)[pygame.KEYDOWN]
@@ -83,7 +83,7 @@ def test_register_stores_callback_and_handle_once():
 
 
 def test_multiple_triggers_share_one_registration():
-    registry = EventsList()
+    registry = EventsDict()
 
     def callback(ctx):
         return None
@@ -91,7 +91,7 @@ def test_multiple_triggers_share_one_registration():
     registry.register(
         [pygame.KEYDOWN, pygame.KEYUP],
         callback,
-        handle_once=False,
+        invocation_policy=False,
     )
 
     entries = dict(registry)
@@ -104,7 +104,7 @@ def test_multiple_triggers_share_one_registration():
 
 
 def test_same_function_can_be_registered_twice():
-    registry = EventsList()
+    registry = EventsDict()
 
     def callback(ctx):
         return None
@@ -121,7 +121,7 @@ def test_same_function_can_be_registered_twice():
 
 
 def test_registering_none_raises_value_error():
-    registry = EventsList()
+    registry = EventsDict()
 
     with pytest.raises(ValueError, match="Cannot register NoneType"):
         registry.register(pygame.KEYDOWN)

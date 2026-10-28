@@ -1,4 +1,6 @@
 from typing import Iterable
+class debug:
+    run_once = False
 class show_log:
     __slots__="Message"
     def __init__(self,Message:str):
