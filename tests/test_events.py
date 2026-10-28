@@ -63,23 +63,6 @@ def test_empty_events_list_returns_empty_results():
 #     assert ctx.dt == 0
 
 
-def test_register_stores_callback_and_handle_once():
-    registry = EventsDict()
-
-    def callback(ctx):
-        return None
-
-    registry.register(
-        pygame.KEYDOWN,
-        callback,
-        invocation_policy=False,
-    )
-
-    entries = dict(registry)[pygame.KEYDOWN]
-
-    assert len(entries) == 1
-    assert entries[0].action is callback
-    assert entries[0].handle_once is False
 
 
 def test_multiple_triggers_share_one_registration():

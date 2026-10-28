@@ -14,7 +14,9 @@ from ..events import ENUMS
 
 
 class EventContext:
-    __slots__=()
+    __slots__ = ()
+
+
 class StateEventContext[EventType](EventContext):
     __slots__ = ("triggered_event", "active_state", "dt")
 
@@ -58,113 +60,80 @@ class CallbackInfo[**P, R]:
         self.invocation_policy: ENUMS.invocation_policy = invocation_policy
 
     def __str__(self):
-        return f"<{self.action} runs {"once" if self.invocation_policy else "multiple times"}>"
+        return f"<{self.action!r} policy={self.invocation_policy}>"
 
     def __iter__(self):
         yield self.action
         yield self.invocation_policy
 
 
-class Callbacks[EventContextType, R]:
+class Callbacks[ContextT, R= Any]:
     __slots__ = ("registered_actions",)
 
     def __init__(self) -> None:
-        self.registered_actions: list[CallbackInfo[[
-            StateEventContext[EventContextType]], R]] = []
+        self.registered_actions: list[
+            CallbackInfo[[ContextT], R]
+        ] = []
 
     def __iter__(self):
         yield from self.registered_actions
 
-    def _invoke_all(self, ctx: StateEventContext[EventContextType]) -> list[tuple[CallbackInfo[[StateEventContext[EventContextType]], R], R]]:
-        return [(action_info, action_info.action(ctx)) for action_info in self.registered_actions]
-
-    def register(self, action: Callable[[StateEventContext[EventContextType]], R], invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP):
-        new_func = CallbackInfo(action, invocation_policy=invocation_policy)
-        self.registered_actions.append(new_func)
-        return action
-
-
-allowed_trigger_types = (int,)
-
-
-class EventsDict[TriggerType,
-                 InputType,
-                 ReturnType = Any]:
-
-    __slots__ = "registered_actions",
-
-    def __init__(self) -> None:
-        self.registered_actions: defaultdict[
-            TriggerType,
-            Callbacks[InputType, ReturnType]] = defaultdict(Callbacks[InputType, ReturnType])
-
-    def _register_internal(self,
-                           trigger: TriggerType,
-                           func: Callable[[StateEventContext[InputType]], ReturnType],
-                           invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP):
-        if (type(trigger)) not in allowed_trigger_types:
-            raise TypeError(f"unknown trigger type: {type(trigger)}")
-        self.registered_actions[trigger].register(
-            func, invocation_policy=invocation_policy)
-        return func
+    def _invoke_all(self, ctx: ContextT) -> list[R]:
+        return [
+            info.action(ctx)
+            for info in self.registered_actions
+        ]
 
     def register(
         self,
-        triggers: Optional[
-            TriggerType | Iterable[TriggerType]
-        ],
-        func: Callable[[StateEventContext[InputType]], ReturnType],
-        invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP,
+        action: Callable[[ContextT], R],
+        invocation_policy: ENUMS.invocation_policy
+        = ENUMS.invocation_policy.ONCE_PER_LOOP,
+    ) -> Callable[[ContextT], R]:
+        info = CallbackInfo(
+            action,
+            invocation_policy=invocation_policy,
+        )
+        self.registered_actions.append(info)
+        return action
 
-    ):
+
+
+
+class EventsDict[
+    TriggerT,
+    EventT,
+    ReturnT = Any,
+]:
+    __slots__ = ("registered_actions",)
+
+    def __init__(self) -> None:
+        self.registered_actions: defaultdict[
+            TriggerT,
+            Callbacks[StateEventContext[EventT], ReturnT],
+        ] = defaultdict(
+            Callbacks[StateEventContext[EventT], ReturnT]
+        )
+
+    def _register_internal(
+        self,
+        trigger: TriggerT,
+        func: Callable[[StateEventContext[EventT]], ReturnT],
+        invocation_policy: ENUMS.invocation_policy
+        = ENUMS.invocation_policy.ONCE_PER_LOOP,
+    ) -> Callable[[StateEventContext[EventT]], ReturnT]:
         if not callable(func):
-            raise TypeError(f"Expected callable for func got: {func}")
+            raise TypeError(f"Expected callable for func, got: {func!r}")
 
-        if isinstance(triggers, Iterable):
-            for trigger in triggers:
-                self._register_internal(
-                    trigger, func, invocation_policy=invocation_policy)
-        elif (isinstance((triggers), (str, pygame.key.ScancodeWrapper, int))):
-            (self._register_internal(triggers, func, invocation_policy=invocation_policy))
+        if type(trigger) is not int:
+            raise TypeError(f"Unknown trigger type: {type(trigger)}")
 
-        elif triggers is None:
-            (self._register_internal(ENUMS.NO_TRIGGERS.VALUE,
-                                     func, invocation_policy=invocation_policy))
-        else:
-            raise TypeError(
-                f"Unknown trigger type: {triggers}({type(triggers)}) for {func}")
-
-        if debugger.FLAGS.debug and debugger.FLAGS.event_registers:
-            print(f"Registered {func!s} with trigger: {triggers!r}")
-
+        self.registered_actions[trigger].register(
+            func,
+            invocation_policy=invocation_policy,
+        )
         return func
 
-    def decorator_register(self,
-                           triggers: Optional[
-                               TriggerType |
-                               Iterable[TriggerType]
-                           ] = ENUMS.NO_TRIGGERS.VALUE,
-                           invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP,
-                           ):
-        def wrapper(
-            func: Callable[[StateEventContext[InputType]], ReturnType]
-        ):
-
-            return self.register(triggers=triggers, func=func,
-                                 invocation_policy=invocation_policy)
-
-        return wrapper
-
-    @property
-    def registered_triggers(self):
-        yield from self.registered_actions.keys()
-
-    @property
-    def registered_events(self):
-        yield from self.registered_actions.values()
-
-    def __iter__(self):
-        yield from self.registered_actions.items()
 
 
 class OptionsEnabledList():
@@ -180,12 +149,12 @@ class OptionsEnabledList():
     ...
 
 
-class EventsQueue[EventType,R=Any]:
+class EventsQueue[ContextT, R = Any]:
     __slots__ = "before", "after"
 
     def __init__(self) -> None:
-        self.before = Callbacks[EventType,R]()
-        self.after = Callbacks[EventType,R]()
+        self.before: Callbacks[ContextT, R] = Callbacks[ContextT, R]()
+        self.after: Callbacks[ContextT, R] = Callbacks[ContextT, R]()
 
 
 class StateEvents:
@@ -193,13 +162,14 @@ class StateEvents:
 
     def __init__(self) -> None:
         self.draw_events_Queue = EventsQueue[DrawEventContext]()
-        self.update_events_Queue = EventsQueue[StateEventContext]()
-        self.on_enter = Callbacks[StateEventContext,Any]()
-        self.on_leave = Callbacks[StateEventContext,Any]()
+        self.update_events_Queue = EventsQueue[StateEventContext[self.update_events_Queue]](
+        )
+        self.on_enter = Callbacks[StateEventContext[self.on_enter], Any]()
+        self.on_leave = Callbacks[StateEventContext[self.on_leave], Any]()
 
 
 class EventsHandler:
     def __init__(self) -> None:
         self.State_Events = StateEvents()
-        self.Keyboard_Event = EventsDict[int,self.Keyboard_Event]()
-        self.Pygame_Event = EventsDict[int,self.Pygame_Event]()
+        self.Keyboard_Event = EventsDict[int, int]()
+        self.Pygame_Event = EventsDict[int, int]()
