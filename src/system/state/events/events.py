@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack
+from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack, cast
 import pygame
 
 from helper import debugger
@@ -73,7 +73,7 @@ class CallbackInfo[**P, R]:
         yield self.invocation_policy
 
 
-class Callbacks[ContextT, R= Any]:
+class Callbacks[ContextT, R = Any]:
     __slots__ = ("registered_actions",)
 
     def __init__(self) -> None:
@@ -113,7 +113,7 @@ class Callbacks[ContextT, R= Any]:
 class EventsDict[
     TriggerT:int | ENUMS.TRIGGERS,
     EventT,
-    ReturnT = Any,
+    ReturnT= Any,
 ]:
     __slots__ = ("registered_actions",)
 
@@ -155,20 +155,28 @@ class EventsDict[
         invocation_policy: ENUMS.invocation_policy
         = ENUMS.invocation_policy.ONCE_PER_LOOP,
     ) -> Callable[[StateEventContext[EventT]], ReturnT]:
-        """Register a callback directly."""
-        if isinstance(triggers, Iterable):
-            for trigger in triggers:
-                self._register_internal(
-                    trigger,
-                    func,
-                    invocation_policy,
-                )
+        """Register a callback for one or multiple triggers."""
+
+        if type(triggers) is int or isinstance(triggers, ENUMS.TRIGGERS):
+            triggers_to_register: Iterable[TriggerT] = (cast(TriggerT, triggers),)
         else:
+            if isinstance(triggers, str):
+                raise TypeError(
+                    f"Expected a trigger or iterable of triggers, got: {triggers!r}"
+                )
+
+            triggers_to_register = cast(
+                Iterable[TriggerT],
+                triggers,
+            )
+
+        for trigger in triggers_to_register:
             self._register_internal(
                 trigger,
                 func,
                 invocation_policy,
             )
+
         return func
 
     def decorator_register(
@@ -207,6 +215,9 @@ class EventsDict[
     def registered_events(self):
         yield from self.registered_actions.values()
 
+    def __iter__(self):
+        yield from self.registered_actions.items()
+
 
 class OptionsEnabledList():
     """
@@ -221,7 +232,7 @@ class OptionsEnabledList():
     ...
 
 
-class EventsQueue[ContextT, R = Any]:
+class EventsQueue[ContextT, R= Any]:
     __slots__ = "before", "after"
 
     def __init__(self) -> None:
