@@ -148,6 +148,57 @@ class EventsDict[
         )
         return func
 
+    def register(
+        self,
+        triggers: TriggerT | Iterable[TriggerT],
+        func: Callable[[StateEventContext[EventT]], ReturnT],
+        invocation_policy: ENUMS.invocation_policy
+        = ENUMS.invocation_policy.ONCE_PER_LOOP,
+    ) -> Callable[[StateEventContext[EventT]], ReturnT]:
+        """Register a callback directly."""
+        if isinstance(triggers, Iterable):
+            for trigger in triggers:
+                self._register_internal(
+                    trigger,
+                    func,
+                    invocation_policy,
+                )
+        else:
+            self._register_internal(
+                trigger,
+                func,
+                invocation_policy,
+            )
+        return func
+
+    def decorator_register(
+        self,
+        trigger: TriggerT,
+        invocation_policy: ENUMS.invocation_policy
+        = ENUMS.invocation_policy.ONCE_PER_LOOP,
+    ):
+        """Return a decorator that registers a callback for a trigger."""
+
+        def decorator(
+            func: Callable[[StateEventContext[EventT]], ReturnT],
+        ) -> Callable[[StateEventContext[EventT]], ReturnT]:
+            return self._register_internal(
+                trigger,
+                func,
+                invocation_policy,
+            )
+
+        return decorator
+
+    def register_decorator(
+        self,
+        trigger: TriggerT,
+        invocation_policy: ENUMS.invocation_policy
+        = ENUMS.invocation_policy.ONCE_PER_LOOP,
+    ):
+        """Alias for decorator_register."""
+        return self.decorator_register(trigger, invocation_policy)
+
     @property
     def registered_triggers(self):
         yield from self.registered_actions.keys()
@@ -155,6 +206,7 @@ class EventsDict[
     @property
     def registered_events(self):
         yield from self.registered_actions.values()
+
 
 class OptionsEnabledList():
     """
