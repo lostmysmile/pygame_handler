@@ -12,27 +12,33 @@ if TYPE_CHECKING:
 
 from ..events import ENUMS
 
+type Trigger = int | ENUMS.TRIGGERS
+
 
 class EventContext:
     __slots__ = ()
 
 
-class StateEventContext[EventType](EventContext):
+class StateEventContext[EventT](EventContext):
     __slots__ = ("triggered_event", "active_state", "dt")
 
-    def __init__(self, active_state: State, triggered_event: EventType, dt: Optional[int | float] = None) -> None:
-        self.active_state: State = active_state
-        self.triggered_event: EventType = triggered_event
-        self.dt: int | float | None = dt
+    def __init__(
+        self,
+        active_state: State,
+        triggered_event: EventT | None = None,
+        dt: float | None = None,
+    ) -> None:
+        self.active_state = active_state
+        self.triggered_event: EventT | None = triggered_event
+        self.dt = dt
 
     def __str__(self) -> str:
-        return f"<EventContext[state={self.active_state},event={self.triggered_event},dt={self.dt}]"
-
-    def update(self, *, dt=None, active_state=None):
-        if active_state is not None:
-            self.active_state = active_state
-        if dt is not None:
-            self.dt = dt
+        return (
+            f"<StateEventContext["
+            f"state={self.active_state}, "
+            f"event={self.triggered_event!r}, "
+            f"dt={self.dt}]>"
+        )
 
 
 class DrawEventContext(EventContext):
@@ -78,6 +84,12 @@ class Callbacks[ContextT, R= Any]:
     def __iter__(self):
         yield from self.registered_actions
 
+    def _invoke_all_with_info(self, ctx: ContextT) -> list[tuple[CallbackInfo[[ContextT], R], R]]:
+        return [
+            (info, info.action(ctx))
+            for info in self.registered_actions
+        ]
+
     def _invoke_all(self, ctx: ContextT) -> list[R]:
         return [
             info.action(ctx)
@@ -98,10 +110,8 @@ class Callbacks[ContextT, R= Any]:
         return action
 
 
-
-
 class EventsDict[
-    TriggerT,
+    TriggerT:int | ENUMS.TRIGGERS,
     EventT,
     ReturnT = Any,
 ]:
@@ -122,11 +132,15 @@ class EventsDict[
         invocation_policy: ENUMS.invocation_policy
         = ENUMS.invocation_policy.ONCE_PER_LOOP,
     ) -> Callable[[StateEventContext[EventT]], ReturnT]:
+
+        if not (
+            type(trigger) is int
+            or isinstance(trigger, ENUMS.TRIGGERS)
+        ):
+            raise TypeError(f"Unknown trigger type: {trigger!r}")
+
         if not callable(func):
             raise TypeError(f"Expected callable for func, got: {func!r}")
-
-        if type(trigger) is not int:
-            raise TypeError(f"Unknown trigger type: {type(trigger)}")
 
         self.registered_actions[trigger].register(
             func,
@@ -134,7 +148,13 @@ class EventsDict[
         )
         return func
 
+    @property
+    def registered_triggers(self):
+        yield from self.registered_actions.keys()
 
+    @property
+    def registered_events(self):
+        yield from self.registered_actions.values()
 
 class OptionsEnabledList():
     """
@@ -162,14 +182,14 @@ class StateEvents:
 
     def __init__(self) -> None:
         self.draw_events_Queue = EventsQueue[DrawEventContext]()
-        self.update_events_Queue = EventsQueue[StateEventContext[self.update_events_Queue]](
+        self.update_events_Queue = EventsQueue[StateEventContext[None]](
         )
-        self.on_enter = Callbacks[StateEventContext[self.on_enter], Any]()
-        self.on_leave = Callbacks[StateEventContext[self.on_leave], Any]()
+        self.on_enter = Callbacks[StateEventContext[None], Any]()
+        self.on_leave = Callbacks[StateEventContext[None], Any]()
 
 
 class EventsHandler:
     def __init__(self) -> None:
         self.State_Events = StateEvents()
-        self.Keyboard_Event = EventsDict[int, int]()
-        self.Pygame_Event = EventsDict[int, int]()
+        self.Keyboard_Event = EventsDict[int | ENUMS.TRIGGERS, pygame.event.Event]()
+        self.Pygame_Event = EventsDict[int | ENUMS.TRIGGERS, pygame.event.Event]()

@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 from sys import path as sys_path
-from .events import EventsHandler, StateEventContext,DrawEventContext, events, ENUMS as EVENT_NUMS
+from .events import EventsHandler, StateEventContext, DrawEventContext, events, ENUMS as EVENT_NUMS
 from ..graphics import EntitiesHandler
 
 
@@ -29,8 +29,10 @@ class NoMoreStates(Exception):
 class NoPreviousStates(Exception):
     ...
 
-def name_counter(name:str,names=defaultdict[str,int](int)):
+
+def name_counter(name: str, names=defaultdict[str, int](int)):
     return names[name]
+
 
 class State:
     _counter = -1
@@ -53,7 +55,7 @@ class State:
 
     def __repr__(self) -> str:
         return f"<State[{self.name!r}] at 0x{id(self):016x}>"
-        
+
     def handle_keyboard_input(self, keys: ScancodeWrapper) -> None:
         pygame.key.set_text_input_rect
         keys_stream = pygame.key.get_pressed()
@@ -79,19 +81,19 @@ class State:
         handled = set()
 
         for event_trigger, listeners in events_and_listeners:
-            if event_trigger == EVENT_NUMS.NO_TRIGGERS.VALUE:
+            if event_trigger == EVENT_NUMS.TRIGGERS.NONE:
                 if debugger.FLAGS.debug and debugger.FLAGS.event_info:
                     print(f"<{event_trigger!r}<no-trigger> for {listeners!r}")
 
                 continue
 
             if debugger.FLAGS.debug and debugger.FLAGS.event_info and debugger.FLAGS.detailed_info:
-                if event_trigger != EVENT_NUMS.ALL_TRIGGERS.VALUE:
+                if event_trigger != EVENT_NUMS.TRIGGERS.ALL:
                     print(f"Checking: {event_trigger!r}, {listeners!r}")
 
             event = events_with_type.get(event_trigger)  # type: ignore
 
-            if (event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE) or (event is not None):
+            if (event_trigger == EVENT_NUMS.TRIGGERS.ALL) or (event is not None):
                 for listener in listeners:
                     if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP and listener.action in handled:
                         if debugger.FLAGS.debug and debugger.FLAGS.event_info:
@@ -100,9 +102,9 @@ class State:
                         continue
 
                     if debugger.FLAGS.debug and debugger.FLAGS.event_info:
-                        if event_trigger == EVENT_NUMS.ALL_TRIGGERS.VALUE:
+                        if event_trigger == EVENT_NUMS.TRIGGERS.ALL:
                             print(
-                                f"handling <GENERIC_TRIGGER>{EVENT_NUMS.ALL_TRIGGERS.VALUE!r} with", end="",
+                                f"handling <GENERIC_TRIGGER>{EVENT_NUMS.TRIGGERS.ALL} with", end="",
                             )
                         else:
                             assert isinstance(event_trigger, int)
@@ -119,7 +121,7 @@ class State:
                             f"Triggering {listener.invocation_policy}: {listener.action!r} ")
 
                     ctx = StateEventContext(
-                        self, event or self.events_handler.Pygame_Event, dt=self.handler.game_handler.window.clock.dt)
+                        self, event, dt=self.handler.game_handler.window.clock.dt)
 
                     listener.action(ctx)
                     if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP:
@@ -127,11 +129,12 @@ class State:
 
     def update(self, dt: float) -> None:
         ctx = StateEventContext(
-            self, self.events_handler.State_Events.update_events_Queue, dt=dt)
+            self, None, dt=dt)
 
         if debugger.FLAGS.debug:
             if debugger.FLAGS.state_context_info:
                 print("context:", ctx)
+
         self.handler.Global_Events.State_Events.update_events_Queue.before._invoke_all(
             ctx)
         self.events_handler.State_Events.update_events_Queue.before._invoke_all(ctx)
@@ -159,14 +162,14 @@ class State:
         self.events_handler.State_Events.draw_events_Queue.after._invoke_all(ctx)
 
     def on_leave(self):
-        ctx = StateEventContext(self, States.Global_Events.State_Events.on_leave)
+        ctx = StateEventContext[None](self)
         if debugger.FLAGS.states_transitions:
             print("Leaving", self, "...")
         States.Global_Events.State_Events.on_leave._invoke_all(ctx)
         self.events_handler.State_Events.on_leave._invoke_all(ctx)
 
     def on_enter(self):
-        ctx = StateEventContext(self, States.Global_Events.State_Events.on_enter)
+        ctx = StateEventContext[None](self)
         if debugger.FLAGS.states_transitions:
             print("Entering", self, "...")
         States.Global_Events.State_Events.on_enter._invoke_all(ctx)
