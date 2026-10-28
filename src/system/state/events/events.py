@@ -88,19 +88,19 @@ allowed_trigger_types = (int,)
 
 
 class EventsDict[TriggerType,
-                 EventContextType,
-                 R = Any]:
+                 InputType,
+                 ReturnType = Any]:
 
     __slots__ = "registered_actions",
 
     def __init__(self) -> None:
         self.registered_actions: defaultdict[
             TriggerType,
-            Callbacks[EventContextType, R]] = defaultdict(Callbacks[EventContextType, R])
+            Callbacks[InputType, ReturnType]] = defaultdict(Callbacks[InputType, ReturnType])
 
     def _register_internal(self,
                            trigger: TriggerType,
-                           func: Callable[[StateEventContext[EventContextType]], R],
+                           func: Callable[[StateEventContext[InputType]], ReturnType],
                            invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP):
         if (type(trigger)) not in allowed_trigger_types:
             raise TypeError(f"unknown trigger type: {type(trigger)}")
@@ -113,7 +113,7 @@ class EventsDict[TriggerType,
         triggers: Optional[
             TriggerType | Iterable[TriggerType]
         ],
-        func: Callable[[StateEventContext[EventContextType]], R],
+        func: Callable[[StateEventContext[InputType]], ReturnType],
         invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP,
 
     ):
@@ -147,7 +147,7 @@ class EventsDict[TriggerType,
                            invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP,
                            ):
         def wrapper(
-            func: Callable[[StateEventContext[EventContextType]], R]
+            func: Callable[[StateEventContext[InputType]], ReturnType]
         ):
 
             return self.register(triggers=triggers, func=func,
@@ -180,26 +180,26 @@ class OptionsEnabledList():
     ...
 
 
-class EventsQueue:
+class EventsQueue[EventType,R=Any]:
     __slots__ = "before", "after"
 
     def __init__(self) -> None:
-        self.before = Callbacks()
-        self.after = Callbacks()
+        self.before = Callbacks[EventType,R]()
+        self.after = Callbacks[EventType,R]()
 
 
 class StateEvents:
     __slots__ = "draw_events_Queue", "update_events_Queue", "on_enter", "on_leave"
 
     def __init__(self) -> None:
-        self.draw_events_Queue = EventsQueue()
-        self.update_events_Queue = EventsQueue()
-        self.on_enter = Callbacks()
-        self.on_leave = Callbacks()
+        self.draw_events_Queue = EventsQueue[DrawEventContext]()
+        self.update_events_Queue = EventsQueue[StateEventContext]()
+        self.on_enter = Callbacks[StateEventContext,Any]()
+        self.on_leave = Callbacks[StateEventContext,Any]()
 
 
 class EventsHandler:
     def __init__(self) -> None:
         self.State_Events = StateEvents()
-        self.Keyboard_Event = EventsDict()
-        self.Pygame_Event = EventsDict()
+        self.Keyboard_Event = EventsDict[int,self.Keyboard_Event]()
+        self.Pygame_Event = EventsDict[int,self.Pygame_Event]()
