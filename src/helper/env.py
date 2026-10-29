@@ -23,7 +23,7 @@ def evaluate_string_option(value: str):
     return value in truthy_values
 
 
-def parse_option[T = Any](optionname: str, default: T="false"):
+def get_option[T = Any](optionname: str, default: T="false"):
     from os import getenv as os_getenv
     return os_getenv(optionname, default)
 
@@ -31,7 +31,9 @@ def parse_option[T = Any](optionname: str, default: T="false"):
 def load_debug_settings():
     print(f"Loading {len(env_settings)} env settings...")
     changed_amount = 0
-    option_all = parse_option("ALL", None)
+    show_updates = debugger.FLAGS.debug_mode or __debug__
+
+    option_all = get_option("ALL", None)
 
     if option_all is None:
         all_settings_value = None
@@ -42,12 +44,15 @@ def load_debug_settings():
         if all_settings_value is not None:
             new_value = all_settings_value
         else:
-            option = parse_option(setting_env_name)
+            option = get_option(setting_env_name)
             new_value = evaluate_string_option(option)
 
         if new_value == getattr(setting_location, setting_name):
             continue
+
         changed_amount += 1
-        print(f"{setting_location.__name__}[{setting_name!r}] set to {new_value!r}")
+
+        if show_updates:
+            print(f"{setting_location.__name__}[{setting_name!r}] set to {new_value!r}")
         setattr(setting_location, setting_name, new_value)
     print(f"Updated {changed_amount} settings.")

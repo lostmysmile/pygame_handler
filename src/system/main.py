@@ -118,7 +118,7 @@ class Game:
 if __name__ == '__main__':
     def test1():
         from helper import debugger
-        # debug.FLAGS.set_all(True)
+        debugger.FLAGS.set_all(True)
 
         game = Game()
 
