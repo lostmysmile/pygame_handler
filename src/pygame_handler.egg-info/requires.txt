@@ -1,9 +1,0 @@
-
-[pygame]
-pygame
-
-[pygame-ce]
-pygame-ce
-
-[test]
-pytest
