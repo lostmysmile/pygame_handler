@@ -19,9 +19,9 @@ env_configs = {
 load_dotenv()
 
 
-def evaluate_string_option(value: Any) -> bool:
+def evaluate_string_option(value: str) -> bool:
     truthy_values = "1", "true", "on"
-    return value in truthy_values
+    return value.lower() in truthy_values
 
 
 def get_option[T= Any](optionname: str, default: T="false"):
@@ -34,15 +34,18 @@ def load_debug_configs():
 
     print(f"Loading {len(env_configs)} env configs...")
 
-    option_all = get_option("ALL", None)
+    option_all = get_option("ALL", "")
 
     all_configs_value = evaluate_string_option(option_all)
 
     for (config_location_name, config_name), config_env_name in env_configs.items():
         if option_all is not None:
             option = get_option(config_env_name, None)
-            value = evaluate_string_option(
-                option) if option is not None else all_configs_value
+            if option is not None:
+                value = evaluate_string_option(
+                option)
+            else: 
+                value = all_configs_value
         else:
             option = get_option(config_env_name)
             value = evaluate_string_option(option)
