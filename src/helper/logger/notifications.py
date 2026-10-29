@@ -62,7 +62,7 @@ if __name__ == "__main__":
         NotificationMessages.display("testing")
 
     def test1():
-        NotificationMessages.display(1)  # type: ignore
+        NotificationMessages.display(1)  # pyright: ignore[reportArgumentType]
 
     def test2():
         NotificationMessages.get_message("__slots__")

@@ -1,18 +1,18 @@
-from helper import debug
+from helper import debugger
 from dotenv import load_dotenv as load_dotenv
 
 from typing import Any
 
 env_settings = {
-    (debug.FLAGS, "run_once"): "RUN_ONCE",
-    (debug.FLAGS, "debug_mode"): "DEBUG_MODE",
-    (debug.FLAGS, "detailed_info"): "DETAILED_INFO",
-    (debug.FLAGS, "event_info"): "EVENT_INFO",
-    (debug.FLAGS, "event_registers"): "EVENT_REGISTERS",
-    (debug.FLAGS, "states_info"): "STATES_INFO",
-    (debug.FLAGS, "state_context_info"): "STATE_CONTEXT_INFO",
-    (debug.FLAGS, "states_transitions"): "STATES_TRANSITIONS",
-    (debug.FLAGS, "time_internals"): "TIME_INTERNALS",
+    (debugger.FLAGS, "run_once"): "RUN_ONCE",
+    (debugger.FLAGS, "debug_mode"): "DEBUG_MODE",
+    (debugger.FLAGS, "detailed_info"): "DETAILED_INFO",
+    (debugger.FLAGS, "event_info"): "EVENT_INFO",
+    (debugger.FLAGS, "event_registers"): "EVENT_REGISTERS",
+    (debugger.FLAGS, "states_info"): "STATES_INFO",
+    (debugger.FLAGS, "state_context_info"): "STATE_CONTEXT_INFO",
+    (debugger.FLAGS, "states_transitions"): "STATES_TRANSITIONS",
+    (debugger.FLAGS, "time_internals"): "TIME_INTERNALS",
 }
 
 load_dotenv()
