@@ -1,18 +1,10 @@
 from typing import Iterable
-class debug:
-    run_once = False
-class show_log:
-    __slots__="Message"
-    def __init__(self,Message:str):
-        self.Message = Message
 
-    def __str__(self):
-        return self.Message
 
 class FLAGS:
     __slots__ = ()
-    
-    debug = False
+
+    debug_mode = False
     detailed_info = False
     event_info = False
     event_registers = False
@@ -20,8 +12,8 @@ class FLAGS:
     state_context_info = False
     states_transitions = False
 
-    #TODO ADD TIMERS FOR PROFILING EACH STEP OF THE CODE
-    time_internals_=False
+    # TODO ADD TIMERS FOR PROFILING EACH STEP OF THE CODE
+    time_internals_ = False
 
     @classmethod
     def set(cls, bunch: Iterable[str], state: bool = False):
@@ -43,9 +35,3 @@ class FLAGS:
         for k, v in cls.__dict__.items():
             if isinstance(v, bool):
                 setattr(cls, k, state)
-
-class settings:
-    __slots__=()
-    init = True
-    greetings=True
-    goodbye=True

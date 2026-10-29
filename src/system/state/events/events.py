@@ -5,7 +5,6 @@ from types import UnionType
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack, cast
 import pygame
 
-from helper import debugger
 
 if TYPE_CHECKING:
     from .. import State
@@ -79,7 +78,7 @@ class Callbacks[ContextT, R = Any]:
 
     def __init__(self, *,
                  custom_registered_iterable: Optional[Iterable[CallbackInfo[[ContextT], R]]] = None) -> None:
-        assert isinstance(custom_registered_iterable, Iterable)
+        assert isinstance(custom_registered_iterable, Iterable) or custom_registered_iterable is None, custom_registered_iterable
 
         self.registered_actions: set[
             CallbackInfo[[ContextT], R]
@@ -96,10 +95,13 @@ class Callbacks[ContextT, R = Any]:
         for info in self.registered_actions:
             info.action(ctx)
 
-    def __or__(self: Self, value: Callbacks[ContextT,R]|None)  -> Callbacks[ContextT, R]:
-        if not value:
+    def __ror__(self: Callbacks[ContextT,R], other: Callbacks[ContextT,R]|None)  -> Callbacks[ContextT, R]:
+        return Callbacks.__or__(self,other)
+
+    def __or__(self: Callbacks, other: Callbacks[ContextT,R]|None)  -> Callbacks[ContextT, R]:
+        if not other:
             return self
-        new_list = self.registered_actions|value.registered_actions
+        new_list = self.registered_actions|other.registered_actions
         return Callbacks(custom_registered_iterable=new_list)
 
     def register(
@@ -259,8 +261,13 @@ class StateEvents:
         self.on_exit = Callbacks[StateEventContext[None]]()
 
 
+class KeyboardEvents:
+    def __init__(self) -> None:
+        self.streamed = Callbacks[StateEventContext[pygame.key.ScancodeWrapper]]()
+        self.pressed = Callbacks[StateEventContext[pygame.key.ScancodeWrapper]]()
+
 class EventsHandler:
     def __init__(self) -> None:
         self.State_Events = StateEvents()
-        self.Keyboard_Event = EventsDict[int | ENUMS.TRIGGERS, pygame.event.Event]()
+        self.Keyboard_Event = KeyboardEvents()
         self.Pygame_Event = EventsDict[int | ENUMS.TRIGGERS, pygame.event.Event]()

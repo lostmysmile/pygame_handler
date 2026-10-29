@@ -7,11 +7,14 @@ from pygame.event import Event
 
 from pathlib import Path
 
-from helper import debugger
+from helper import debug, env
+from helper.logger import notifications
 from .state import State, States, NoMoreStates  # type: ignore
 from .graphics import Window, Background  # type: ignore
 
-
+from helper.logger import show_message
+print(show_message(("hewwo ;3")))
+exit()
 class movement_handler:
     def __init__(self, handler: Game) -> None:
         self.game_handler = handler
@@ -68,13 +71,8 @@ class movement_handler:
 
 
 class Game:
-    class Settings:
-        __slots__ = ()
-        speed_multiplier = 1
-
     def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
-        if debugger.settings.init:
-            print("Initializing...")
+        notifications.NotificationMessages.init.display()
 
         self.States = States().with_handler(self)
         self.DEFAULT_STATE = self.States.default_state
@@ -84,21 +82,35 @@ class Game:
             background_handler=background,
             fps_target=target_fps)
 
-        if debugger.settings.init:
-            print("Finished initializing")
+        notifications.NotificationMessages.init_done.display()
 
-    def main_logic(self):
-        active_state = self.States.active_state
-        pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
-        active_state.handle_keyboard_input(keys=pressed_keys)
+    def get_inputs(self):
+        keys_stream: ScancodeWrapper = pygame.key.get_pressed()
+        keys_pressed: ScancodeWrapper = pygame.key.get_just_pressed()
+        triggered_events: list[Event] = pygame.event.get()
+        return triggered_events, keys_stream, keys_pressed
 
-        expected_events = active_state.events_handler.Pygame_Event.registered_actions.keys()
-        triggered_events: list[Event] = pygame.event.get(expected_events)
-        active_state.handle_pygame_events(triggered_events)
+    def run_logic(self, state: State):
+        if debug.FLAGS.states_info and debug.FLAGS.detailed_info:
+            print("Handling logic...")
+
+        triggered_events, keys_stream, keys_pressed = self.get_inputs()
+
+        state.handle_keyboard_input(
+            keys_pressed=keys_pressed, keys_stream=keys_stream)
+
+        state.handle_pygame_events(triggered_events)
+
+        if debug.FLAGS.debug_mode and debug.FLAGS.states_info and debug.FLAGS.detailed_info:
+            print("Finished logic.")
+            print("Updating state...")
 
     def setUp(self):
+        env.load_settings()
+
+        notifications.NotificationMessages.welcome.display()
         if not self.States:
-            if debugger.FLAGS.states_transitions:
+            if debug.FLAGS.states_transitions:
                 print("No states found.")
                 print("Using Default State.")
             self.States.deque.append(self.States.default_state)
@@ -108,6 +120,24 @@ class Game:
 
     def optimize_game(self):
         ...
+        # TODO implement
+
+    def update(self, state: State):
+        state.update(self.window.clock.dt)
+        if debug.FLAGS.debug_mode and debug.FLAGS.states_info:
+            print("State update finished.")
+            print("Updating window...")
+
+        self.window.update()
+        if debug.FLAGS.debug_mode and debug.FLAGS.states_info and debug.FLAGS.detailed_info:
+            print("window update finished.")
+            print("Drawing...")
+
+    def draw(self, state: State):
+
+        self.window.draw(state)
+        if debug.FLAGS.debug_mode and debug.FLAGS.states_info and debug.FLAGS.detailed_info:
+            print("Finished Drawing.")
 
     def game_loop(self):
         self.setUp()
@@ -122,35 +152,20 @@ class Game:
              ! ex: if state.running=False; pick if you want to skip all events or just this loop
              ! make logic_events_dispatchers that run automatically above normal events and can be skipped too via special option"""
 
+            active_state: State = self.States.active_state
+
             self.window.clock.tick()
 
-            if debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
-                print("Handling logic...")
+            self.run_logic(active_state)
 
-            self.main_logic()
-            if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
-                print("Finished logic.")
-                print("Updating state...")
+            self.update(active_state)
 
-            active_state.update(self.window.clock.dt)
-            if debugger.FLAGS.debug and debugger.FLAGS.states_info:
-                print("State update finished.")
-                print("Updating window...")
+            self.draw(active_state)
 
-            self.window.update()
-            if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
-                print("window update finished.")
-                print("Drawing...")
-
-            self.window.draw(active_state)
-            if debugger.FLAGS.debug and debugger.FLAGS.states_info and debugger.FLAGS.detailed_info:
-                print("Finished Drawing.")
-
-            if debugger.debug.run_once is True:
+            if debug.run_once is True:
                 break
 
-        if debugger.settings.goodbye:
-            print("Bye bye!")
+        notifications.NotificationMessages.goodbye.display()
 
     run = game_loop
 
@@ -160,8 +175,8 @@ if __name__ == '__main__':
         game = Game()
 
         # game.DEFAULT_STATE.running = False# DEBUG
-        from helper import debugger
-        debugger.FLAGS.set_all(True)
-        debugger.debug.run_once = True
-        game.game_loop()
+        from helper import debug
+        debug.FLAGS.set_all(True)
+        # debugger.debug.run_once = True
+        game.run()
     test1()
