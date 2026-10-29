@@ -118,8 +118,9 @@ def test_registering_none_trigger_raises_type_error():
     with pytest.raises(TypeError, match="Expected a trigger or iterable of triggers, got: None"):
         registry.register(None, key_pressed)
 
+
 def test_registering_none_callback_raises_type_error():
     registry = EventsDict()
 
     with pytest.raises(TypeError, match="Expected callable"):
-        registry.register(pygame.KEYDOWN, None)
+        registry.register(pygame.KEYDOWN, None)  # type: ignore
