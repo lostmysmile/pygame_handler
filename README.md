@@ -96,6 +96,7 @@ scripts\test.bat
 - [Architecture overview](ARCHITECTURE.MD) — runtime flow, package responsibilities, and known limitations.
 - [Changelog](CHANGELOG.md) — notable changes in the current development line.
 - [Spritesheet helper notes](src/pygame_handler/spritesheets/README.md) — experimental module status and known import blockers.
+- [Graphs, designs, and patterns](docs/graphs-and-designs/README.md) — Mermaid diagrams, component design, and pattern notes.
 
 ## License
 
