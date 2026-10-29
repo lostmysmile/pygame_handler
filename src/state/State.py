@@ -14,7 +14,8 @@ from .events import ENUMS as EVENT_NUMS
 if TYPE_CHECKING:
     from ..system.main import Game
 
-from helper import debug
+from helper.debugger import FLAGS
+from helper.logger import show_message
 
 import pygame
 
@@ -111,19 +112,19 @@ class State:
     #         self.events_handler.Pygame_Event
     #     )
 
-    #     # if debug.FLAGS.debug_mode and debug.FLAGS.detailed_info:
+    #     # if FLAGS.debug_mode and FLAGS.detailed_info:
     #     #     print((events_and_listeners))
 
     #     handled = set()
 
     #     for event_trigger, listeners in events_and_listeners:
     #         if event_trigger == EVENT_NUMS.TRIGGERS.NONE:
-    #             if debug.FLAGS.debug_mode and debug.FLAGS.event_info:
+    #             if FLAGS.debug_mode and FLAGS.event_info:
     #                 print(f"<{event_trigger!r}<no-trigger> for {listeners!r}")
 
     #             continue
 
-    #         if debug.FLAGS.debug_mode and debug.FLAGS.event_info and debug.FLAGS.detailed_info:
+    #         if FLAGS.debug_mode and FLAGS.event_info and FLAGS.detailed_info:
     #             if event_trigger != EVENT_NUMS.TRIGGERS.ALL:
     #                 print(f"Checking: {event_trigger!r}, {listeners!r}")
 
@@ -132,12 +133,12 @@ class State:
     #         if (event_trigger == EVENT_NUMS.TRIGGERS.ALL) or (event is not None):
     #             for listener in listeners:
     #                 if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP and listener.action in handled:
-    #                     if debug.FLAGS.debug_mode and debug.FLAGS.event_info:
+    #                     if FLAGS.debug_mode and FLAGS.event_info:
     #                         print(
     #                             f"Skipped {listener.action!r}; Has already been triggered")
     #                     continue
 
-    #                 if debug.FLAGS.debug_mode and debug.FLAGS.event_info:
+    #                 if FLAGS.debug_mode and FLAGS.event_info:
     #                     if event_trigger == EVENT_NUMS.TRIGGERS.ALL:
     #                         print(
     #                             f"handling <GENERIC_TRIGGER>{EVENT_NUMS.TRIGGERS.ALL} with", end="",
@@ -152,7 +153,7 @@ class State:
 
     #                     print(f"{listener}.")
 
-    #                 if debug.FLAGS.debug_mode and debug.FLAGS.event_info:
+    #                 if FLAGS.debug_mode and FLAGS.event_info:
     #                     print(
     #                         f"Triggering {listener.invocation_policy}: {listener.action!r} ")
 
@@ -167,8 +168,8 @@ class State:
         ctx = StateEventContext(
             self, None, dt=dt)
 
-        if debug.FLAGS.debug_mode:
-            if debug.FLAGS.state_context_info:
+        if FLAGS.debug_mode:
+            if FLAGS.state_context_info:
                 print("context:", ctx)
 
         self.handler.Global_Events.State_Events.update_events_Queue.before._invoke_all(
@@ -184,7 +185,7 @@ class State:
     def draw_on(self, surf: pygame.Surface) -> None:
         ctx = DrawEventContext(self)
 
-        if debug.FLAGS.debug_mode and debug.FLAGS.state_context_info:
+        if FLAGS.debug_mode and FLAGS.state_context_info:
             print("context:", ctx)
 
         self.handler.Global_Events.State_Events.draw_events_Queue.before._invoke_all(
@@ -199,14 +200,14 @@ class State:
 
     def on_leave(self):
         ctx = StateEventContext[None](self)
-        if debug.FLAGS.states_transitions:
+        if FLAGS.states_transitions:
             print("Leaving", self, "...")
         States.Global_Events.State_Events.on_leave._invoke_all(ctx)
         self.events_handler.State_Events.on_leave._invoke_all(ctx)
 
     def on_enter(self):
         ctx = StateEventContext[None](self)
-        if debug.FLAGS.states_transitions:
+        if FLAGS.states_transitions:
             print("Entering:", self)
         States.Global_Events.State_Events.on_enter._invoke_all(ctx)
         self.events_handler.State_Events.on_enter._invoke_all(ctx)
@@ -237,7 +238,7 @@ class States:
         if self.prev_state is None:
             raise NoPreviousStates("Can not rollback on first state")
 
-        if debug.FLAGS.debug_mode and debug.FLAGS.states_transitions:
+        if FLAGS.debug_mode and FLAGS.states_transitions:
             print(f"Switching state from: {self.active_state} to {self.prev_state}")
 
         self.active_state.on_leave()
@@ -262,7 +263,7 @@ class States:
         else:
             self.active_state.on_enter()
 
-        if debug.FLAGS.debug_mode and debug.FLAGS.states_transitions:
+        if FLAGS.debug_mode and FLAGS.states_transitions:
             print(f"Switching state from: {self.prev_state} to {self.active_state}")
 
 
@@ -270,7 +271,7 @@ class States:
 def QUIT(ctx: StateEventContext):
     ctx.active_state.running = False
     print("Quitting...")
-    return debug.show_message("Quitting...")
+    return show_message("Quitting...")
 
 
 if __name__ == '__main__':
