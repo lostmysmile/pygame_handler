@@ -12,7 +12,7 @@ from state.events import (
 )
 
 
-def test_invoke_internal_returns_results_in_order():
+def test_iterable_invoke_all_returns_results_in_registration_order():
     callbacks = Callbacks()
     calls = []
 
@@ -41,7 +41,7 @@ def test_invoke_internal_returns_results_in_order():
     assert calls == ["first", "second"]
 
 
-def test_empty_events_list_returns_None():
+def test_invoke_all_on_empty_callbacks_returns_none():
     callbacks = Callbacks()
     ctx = StateEventContext(
         active_state=SimpleNamespace(),  # type: ignore
@@ -109,7 +109,7 @@ def test_same_function_can_be_registered_twice():
     assert first is not second
 
 
-def test_registering_none_raises_value_error():
+def test_registering_none_trigger_raises_type_error():
     registry = EventsDict()
 
     def key_pressed(ctx):
@@ -117,3 +117,9 @@ def test_registering_none_raises_value_error():
 
     with pytest.raises(TypeError, match="Expected a trigger or iterable of triggers, got: None"):
         registry.register(None, key_pressed)
+
+def test_registering_none_callback_raises_type_error():
+    registry = EventsDict()
+
+    with pytest.raises(TypeError, match="Expected callable"):
+        registry.register(pygame.KEYDOWN, None)

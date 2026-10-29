@@ -1,5 +1,6 @@
 # pygame handler system
 
-## How to run?
+## Usage in terminal
 
-> Type ```py -m system.main``` in terminal
+> ```py -m system.main``` to run
+> ```py -m pytest -v``` to test
