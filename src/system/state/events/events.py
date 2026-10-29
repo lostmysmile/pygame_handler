@@ -72,6 +72,7 @@ class CallbackInfo[**P, R]:
         yield self.action
         yield self.invocation_policy
 
+from ordered_set import OrderedSet
 
 class Callbacks[ContextT, R = Any]:
     __slots__ = ("registered_actions",)
@@ -80,9 +81,9 @@ class Callbacks[ContextT, R = Any]:
                  custom_registered_iterable: Optional[Iterable[CallbackInfo[[ContextT], R]]] = None) -> None:
         assert isinstance(custom_registered_iterable, Iterable) or custom_registered_iterable is None, custom_registered_iterable
 
-        self.registered_actions: set[
+        self.registered_actions: OrderedSet[
             CallbackInfo[[ContextT], R]
-        ] = set(custom_registered_iterable) if custom_registered_iterable is not None else set()
+        ] = OrderedSet(custom_registered_iterable or [])
 
     def __iter__(self):
         yield from self.registered_actions
@@ -171,7 +172,7 @@ class EventsDict[
         if type(triggers) is int or isinstance(triggers, ENUMS.TRIGGERS):
             triggers_to_register: Iterable[TriggerT] = (cast(TriggerT, triggers),)
         else:
-            if not isinstance(triggers, (str,int)):
+            if not isinstance(triggers, (str,int,Iterable)):
                 raise TypeError(
                     f"Expected a trigger or iterable of triggers, got: {triggers!r}"
                 )
