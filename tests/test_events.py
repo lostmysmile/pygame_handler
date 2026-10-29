@@ -111,5 +111,5 @@ def test_registering_none_raises_value_error():
     def key_pressed():
         ...
         
-    with pytest.raises(TypeError, match="Cannot register NoneType"):
+    with pytest.raises(TypeError, match="Expected a trigger or iterable of triggers, got: None"):
         registry.register(None,key_pressed)
