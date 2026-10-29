@@ -106,5 +106,7 @@ def test_same_function_can_be_registered_twice():
 def test_registering_none_raises_value_error():
     registry = EventsDict()
 
+    def key_pressed():
+        ...
     with pytest.raises(ValueError, match="Cannot register NoneType"):
-        registry.register(pygame.KEYDOWN)
+        registry.register(pygame.KEYDOWN,key_pressed)
