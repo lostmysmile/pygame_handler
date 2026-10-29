@@ -1,6 +1,6 @@
 import math
 
-from graphics import clock_handler
+from pygame_handler.graphics import clock_handler
 
 class movement_handler:
     def __init__(self, clock: clock_handler) -> None:

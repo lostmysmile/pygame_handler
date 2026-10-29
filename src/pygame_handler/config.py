@@ -1,4 +1,4 @@
-class Settings:
+class config:
     __slots__ = ()
     class game:
         __slots__ = ()

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pygame
 import pytest
 
-from state.events import (
+from pygame_handler.scene.events import (
     invocation_policy,
     Callbacks,
     StateEventContext,
@@ -122,5 +122,6 @@ def test_registering_none_trigger_raises_type_error():
 def test_registering_none_callback_raises_type_error():
     registry = EventsDict()
 
-    with pytest.raises(AssertionError, match="Action can not be None"):
+    with pytest.raises(TypeError, match="Expected callable for func, got: None"):
         registry.register(pygame.KEYDOWN, None)  # type: ignore
+

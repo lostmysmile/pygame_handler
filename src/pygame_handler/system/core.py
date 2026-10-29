@@ -7,19 +7,21 @@ from pygame.event import Event
 
 from pathlib import Path
 
-from helper.env import load_debug_settings as env_load_debug_settings
-from helper.debugger import FLAGS
-from helper.logger import notification_system, show_message
+from pygame_handler.helper.env import load_debug_configs as env_load_debug_configs
+from pygame_handler.helper.debugger import FLAGS
+from pygame_handler.helper.logger import notification_system
 
-from state import NoMoreStates, States, State
-from graphics import Window, Background
+from pygame_handler.helper.logger import show_message
+from pygame_handler.scene import NoMoreStates, Scenes_handler
+from pygame_handler.scene import Scene
+from pygame_handler.graphics import Window, Background
 
 
 class Game:
     def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
         notification_system.Notification.init.display()
 
-        self.States = States().with_handler(self)
+        self.States = Scenes_handler().with_handler(self)
         self.DEFAULT_STATE = self.States.default_state
 
         self.window = Window(
@@ -27,7 +29,7 @@ class Game:
             background_handler=background,
             fps_target=target_fps)
 
-        env_load_debug_settings()
+        env_load_debug_configs()
 
         notification_system.Notification.init_done.display()
 
@@ -37,7 +39,7 @@ class Game:
         triggered_events: list[Event] = pygame.event.get()
         return triggered_events, keys_stream, keys_pressed
 
-    def run_logic(self, state: State):
+    def run_logic(self, state: Scene):
         if FLAGS.states_info and FLAGS.detailed_info:
             print("Handling logic...")
 
@@ -67,7 +69,7 @@ class Game:
         ...
         # TODO implement
 
-    def update(self, state: State):
+    def update(self, state: Scene):
         state.update(self.window.clock.dt)
         if FLAGS.debug_mode and FLAGS.states_info:
             print("State update finished.")
@@ -78,7 +80,7 @@ class Game:
             print("window update finished.")
             print("Drawing...")
 
-    def draw(self, state: State):
+    def draw(self, state: Scene):
 
         self.window.draw(state)
         if FLAGS.debug_mode and FLAGS.states_info and FLAGS.detailed_info:
@@ -97,7 +99,7 @@ class Game:
              ! ex: if state.running=False; pick if you want to skip all events or just this loop
              ! make logic_events_dispatchers that run automatically above normal events and can be skipped too via special option"""
 
-            active_state: State = self.States.active_state
+            active_state: Scene = self.States.active_state
 
             self.window.clock.tick()
 
@@ -117,7 +119,7 @@ class Game:
 
 if __name__ == '__main__':
     def test1():
-        from helper import debugger
+        from pygame_handler.helper import debugger
         # debugger.FLAGS.set_all(True)
 
         game = Game()

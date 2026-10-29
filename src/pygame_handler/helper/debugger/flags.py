@@ -31,7 +31,7 @@ class FLAGS:
             if isinstance(v, bool):
                 setattr(cls, k, state)
             else:
-                raise ValueError("Invalid setting")
+                raise ValueError("Invalid config")
 
     @classmethod
     def set_all(cls, state: bool = False):

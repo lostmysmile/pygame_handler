@@ -9,6 +9,9 @@ requires-python = ">=3.15"
 description = "A system that helps build pygame game loops like a game engine"
 license = "MIT"
 readme = "README.md" 
+authors = [
+    { name = "lostmysmile" }
+]
 dependencies = [
     "ordered-set",
     "python-dotenv"
@@ -17,9 +20,6 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/lostmysmile/pygame_handler"
 
-authors = [
-    { name = "lostmysmile" }
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]

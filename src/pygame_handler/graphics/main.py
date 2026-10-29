@@ -6,7 +6,7 @@ import pygame
 from pathlib import Path
 
 if TYPE_CHECKING:
-    from ..state.State import State, States
+    from ..scene.Scene import Scene, Scenes_handler
 
 
 class Background:
@@ -121,7 +121,7 @@ class Window:
         if self.background:
             self.background.update()
 
-    def draw(self, state: Union[State, None] = None) -> None:
+    def draw(self, state: Union[Scene, None] = None) -> None:
         if self.background:
             self.background.draw_on(self.screen)
         if state:
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     def main():
         bg = Background("white")
         window = Window(background_handler=bg, size=(500, 500))
-        states = States()
+        states = Scenes_handler()
         running = True
         while running:
             window.clock.tick()   # Delta time in seconds

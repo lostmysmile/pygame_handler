@@ -8,7 +8,7 @@ import pygame
 
 
 if TYPE_CHECKING:
-    from .. import State
+    from .. import Scene
 
 
 from . import ENUMS
@@ -25,7 +25,7 @@ class StateEventContext[EventT](EventContext):
 
     def __init__(
         self,
-        active_state: State,
+        active_state: Scene,
         triggered_event: EventT | None = None,
         dt: float | None = None,
     ) -> None:
@@ -45,8 +45,8 @@ class StateEventContext[EventT](EventContext):
 class DrawEventContext(EventContext):
     __slots__ = ("active_state")
 
-    def __init__(self, active_state: State) -> None:
-        self.active_state: State = active_state
+    def __init__(self, active_state: Scene) -> None:
+        self.active_state: Scene = active_state
 
     def __str__(self) -> str:
         return f"<DrawEventContext[state={self.active_state}]"
@@ -196,7 +196,9 @@ class EventsDict[
         = ENUMS.invocation_policy.ONCE_PER_LOOP,
     ) -> Callable[[StateEventContext[EventT]], ReturnT]:
         """Register a callback for one or multiple triggers."""
-
+        if not callable(func):
+            raise TypeError(f"Expected callable for func, got: {func!r}")
+            
         if  isinstance(triggers, (int,ENUMS.TRIGGERS)):
             triggers_to_register: Iterable[TriggerT] = (cast(TriggerT, triggers),)
         elif not isinstance(triggers, (str, Iterable)):
@@ -265,7 +267,7 @@ class OptionsEnabledList():
     TODO make events (callables) that can be executed on each frame 
     (or variable frame) 
     ex: every 1 frame or 10 frames
-    (with or without an option required) option: variable that simulates settings for the game engine
+    (with or without an option required) option: variable that simulates configs for the game engine
     ex: if Game.Options.Stepped_Frames=ON > every {variable; mentioned above} frame wait until keyboard.get_pressed("Enter") 
     ! not each pause should the engine fix movements from delta time or else things would teleport far ahead
         ? check elapsed time and subtract from the dt to get accurate measures

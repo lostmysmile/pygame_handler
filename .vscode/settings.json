@@ -1,0 +1,11 @@
+{
+    "files.exclude": {
+        "**/*.rpyc": true,
+        "**/*.rpa": true,
+        "**/*.rpymc": true,
+        "**/cache/": true
+    },
+    "pip-updater.VirtualEnv": [],
+    "python.terminal.useEnvFile": true,
+    "pip-updater.AutoUpdate": true
+}

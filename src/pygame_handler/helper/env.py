@@ -1,9 +1,9 @@
-from helper import debugger
+from pygame_handler.helper import debugger
 from dotenv import load_dotenv as load_dotenv
 
 from typing import Any
 
-env_settings = {
+env_configs = {
     (debugger.FLAGS, "run_once"): "RUN_ONCE",
     (debugger.FLAGS, "debug_mode"): "DEBUG_MODE",
     (debugger.FLAGS, "detailed_info"): "DETAILED_INFO",
@@ -29,32 +29,32 @@ def get_option[T= Any](optionname: str, default: T="false"):
     return os_getenv(optionname, default)
 
 
-def load_debug_settings():
+def load_debug_configs():
     changed_list = []
 
-    print(f"Loading {len(env_settings)} env settings...")
+    print(f"Loading {len(env_configs)} env configs...")
 
     option_all = get_option("ALL", None)
 
-    all_settings_value = evaluate_string_option(option_all)
+    all_configs_value = evaluate_string_option(option_all)
 
-    for (setting_location_name, setting_name), setting_env_name in env_settings.items():
+    for (config_location_name, config_name), config_env_name in env_configs.items():
         if option_all is not None:
-            option = get_option(setting_env_name, None)
+            option = get_option(config_env_name, None)
             value = evaluate_string_option(
-                option) if option is not None else all_settings_value
+                option) if option is not None else all_configs_value
         else:
-            option = get_option(setting_env_name)
+            option = get_option(config_env_name)
             value = evaluate_string_option(option)
 
-        if value == getattr(setting_location_name, setting_name):
+        if value == getattr(config_location_name, config_name):
             continue
 
-        changed_list.append((setting_location_name.__name__, setting_name, value))
-        setattr(setting_location_name, setting_name, value)
+        changed_list.append((config_location_name.__name__, config_name, value))
+        setattr(config_location_name, config_name, value)
 
     show_updates = debugger.FLAGS.init_info
     if show_updates:
         for details in changed_list:
-            print("Setting {}[{!r}] set to {!r}".format(*details))
-    print(f"Updated settings.")
+            print("Config {}[{!r}] set to {!r}".format(*details))
+    print(f"Updated configs.")
