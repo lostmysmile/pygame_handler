@@ -87,6 +87,9 @@ class Callbacks[ContextT, R = Any]:
     def __iter__(self):
         yield from self.registered_actions
 
+    def __len__(self):
+        return len(self.registered_actions)
+
     def _iterable_invoke_all(self, ctx: ContextT) -> Generator[tuple[CallbackInfo[[ContextT], R], R], Any, None]:
         for info in self.registered_actions:
             yield (info, info.action(ctx))
