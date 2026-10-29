@@ -207,7 +207,7 @@ class State:
     def on_enter(self):
         ctx = StateEventContext[None](self)
         if debug.FLAGS.states_transitions:
-            print("Entering", self, "...")
+            print("Entering:", self)
         States.Global_Events.State_Events.on_enter._invoke_all(ctx)
         self.events_handler.State_Events.on_enter._invoke_all(ctx)
 

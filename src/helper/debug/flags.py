@@ -1,9 +1,11 @@
 from typing import Iterable
 
 
+
 class FLAGS:
     __slots__ = ()
 
+    run_once = False
     debug_mode = False
     detailed_info = False
     event_info = False
@@ -13,7 +15,7 @@ class FLAGS:
     states_transitions = False
 
     # TODO ADD TIMERS FOR PROFILING EACH STEP OF THE CODE
-    time_internals_ = False
+    time_internals = False
 
     @classmethod
     def set(cls, bunch: Iterable[str], state: bool = False):
@@ -35,3 +37,5 @@ class FLAGS:
         for k, v in cls.__dict__.items():
             if isinstance(v, bool):
                 setattr(cls, k, state)
+
+

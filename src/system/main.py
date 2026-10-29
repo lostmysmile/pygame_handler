@@ -161,7 +161,7 @@ class Game:
 
             self.draw(active_state)
 
-            if debug.run_once is True:
+            if debug.FLAGS.run_once is True:
                 break
 
         notifications.NotificationMessages.goodbye.display()
@@ -172,7 +172,7 @@ class Game:
 if __name__ == '__main__':
     def test1():
         from helper import debug
-        debug.FLAGS.set_all(True)
+        # debug.FLAGS.set_all(True)
 
         game = Game()
 
