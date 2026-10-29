@@ -1,4 +1,4 @@
-# Graphs, Designs, and Patterns
+# Graphs, Designs, Patterns, UML, and ERD
 
 This folder collects visual documentation for how `pygame_handler` currently works and the design ideas visible in the code.
 
