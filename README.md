@@ -2,8 +2,8 @@
 
 ## Usage in terminal
 
-> `py -m system.main` to run  
-> `py -m pytest -v` to test
+> `py -m pygame_handler.system.main` to run  
+> `py -m pytest -v .` to test
 
 ### Checkout
 
