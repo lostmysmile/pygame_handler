@@ -6,7 +6,7 @@ class NotificationMessages:
         def __init__(self, string: str, hidden: bool = False) -> None:
             self._string, self._hidden = string, hidden
 
-        def __add__(self, other: NotificationMessages.Message | str):
+        def __add__(self, other: "NotificationMessages.Message | str"):
             assert isinstance(other, (str, NotificationMessages.Message))
             if isinstance(other, str):
                 new_message = (self._string+other)
