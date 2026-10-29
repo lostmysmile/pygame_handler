@@ -118,11 +118,14 @@ class Game:
 if __name__ == '__main__':
     def test1():
         from helper import debugger
-        debugger.FLAGS.set_all(True)
+        # debugger.FLAGS.set_all(True)
 
         game = Game()
 
         # game.DEFAULT_STATE.running = False# DEBUG
         # debugger.debug.run_once = True
+        # @game.DEFAULT_STATE.events_handler.Pygame_Event.register_decorator(1)
+        # def testing():print("hello wolrd")
+
         game.run()
     test1()

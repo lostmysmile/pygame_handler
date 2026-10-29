@@ -1,4 +1,5 @@
 from __future__ import annotations
+from ordered_set import OrderedSet
 
 from collections import defaultdict, namedtuple
 from types import UnionType
@@ -61,7 +62,7 @@ class CallbackInfo[**P, R]:
                  action: Callable[P, R],
                  invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP,
                  ):
-
+        assert action is not None, "Action can not be None"
         self.action: Callable[P, R] = action
         self.invocation_policy: ENUMS.invocation_policy = invocation_policy
 
@@ -72,14 +73,14 @@ class CallbackInfo[**P, R]:
         yield self.action
         yield self.invocation_policy
 
-from ordered_set import OrderedSet
 
-class Callbacks[ContextT, R = Any]:
+class Callbacks[ContextT, R= Any]:
     __slots__ = ("registered_actions",)
 
     def __init__(self, *,
                  custom_registered_iterable: Optional[Iterable[CallbackInfo[[ContextT], R]]] = None) -> None:
-        assert isinstance(custom_registered_iterable, Iterable) or custom_registered_iterable is None, custom_registered_iterable
+        assert isinstance(custom_registered_iterable,
+                          Iterable) or custom_registered_iterable is None, custom_registered_iterable
 
         self.registered_actions: OrderedSet[
             CallbackInfo[[ContextT], R]
@@ -99,13 +100,13 @@ class Callbacks[ContextT, R = Any]:
         for info in self.registered_actions:
             info.action(ctx)
 
-    def __ror__(self: Callbacks[ContextT,R], other: Callbacks[ContextT,R]|None)  -> Callbacks[ContextT, R]:
-        return Callbacks.__or__(self,other)
+    def __ror__(self: Callbacks[ContextT, R], other: Callbacks[ContextT, R] | None) -> Callbacks[ContextT, R]:
+        return Callbacks.__or__(self, other)
 
-    def __or__(self: Callbacks, other: Callbacks[ContextT,R]|None)  -> Callbacks[ContextT, R]:
+    def __or__(self: Callbacks, other: Callbacks[ContextT, R] | None) -> Callbacks[ContextT, R]:
         if not other:
             return self
-        new_list = self.registered_actions|other.registered_actions
+        new_list = self.registered_actions | other.registered_actions
         return Callbacks(custom_registered_iterable=new_list)
 
     def register(
@@ -118,8 +119,17 @@ class Callbacks[ContextT, R = Any]:
             action,
             invocation_policy=invocation_policy,
         )
-        self.registered_actions.add(info)
+
+        self._register_info(info)
+
         return action
+
+    def _register_info(
+        self,
+        info: CallbackInfo[[ContextT], R],
+    ) -> None:
+
+        self.registered_actions.add(info)
 
 
 class EventsDict[
@@ -137,12 +147,27 @@ class EventsDict[
             Callbacks[StateEventContext[EventT], ReturnT]
         )
 
+    def _register_info(
+        self,
+        trigger: TriggerT,
+        info: CallbackInfo[
+            [StateEventContext[EventT]],
+            ReturnT,
+        ],
+    ) -> None:
+        if not (
+            type(trigger) is int
+            or isinstance(trigger, ENUMS.TRIGGERS)
+        ):
+            raise TypeError(f"Unknown trigger type: {trigger!r}")
+
+        self.registered_actions[trigger]._register_info(info)
+
     def _register_internal(
         self,
         trigger: TriggerT,
         func: Callable[[StateEventContext[EventT]], ReturnT],
-        invocation_policy: ENUMS.invocation_policy
-        = ENUMS.invocation_policy.ONCE_PER_LOOP,
+        invocation_policy: ENUMS.invocation_policy = ENUMS.invocation_policy.ONCE_PER_LOOP,
     ) -> Callable[[StateEventContext[EventT]], ReturnT]:
 
         if not (
@@ -154,10 +179,13 @@ class EventsDict[
         if not callable(func):
             raise TypeError(f"Expected callable for func, got: {func!r}")
 
-        self.registered_actions[trigger].register(
-            func,
+        info = CallbackInfo(
+            action=func,
             invocation_policy=invocation_policy,
         )
+
+        self._register_info(trigger, info)
+
         return func
 
     def register(
@@ -169,25 +197,26 @@ class EventsDict[
     ) -> Callable[[StateEventContext[EventT]], ReturnT]:
         """Register a callback for one or multiple triggers."""
 
-        if type(triggers) is int or isinstance(triggers, ENUMS.TRIGGERS):
+        if  isinstance(triggers, (int,ENUMS.TRIGGERS)):
             triggers_to_register: Iterable[TriggerT] = (cast(TriggerT, triggers),)
+        elif not isinstance(triggers, (str, Iterable)):
+            raise TypeError(
+                f"Expected a trigger or iterable of triggers, got: {triggers!r}"
+            )
         else:
-            if not isinstance(triggers, (str,int,Iterable)):
-                raise TypeError(
-                    f"Expected a trigger or iterable of triggers, got: {triggers!r}"
-                )
 
             triggers_to_register = cast(
                 Iterable[TriggerT],
                 triggers,
             )
 
+        info = CallbackInfo(
+            func,
+            invocation_policy=invocation_policy,
+        )
+
         for trigger in triggers_to_register:
-            self._register_internal(
-                trigger,
-                func,
-                invocation_policy,
-            )
+            self._register_info(trigger, info)
 
         return func
 
@@ -269,6 +298,7 @@ class KeyboardEvents:
     def __init__(self) -> None:
         self.streamed = Callbacks[StateEventContext[pygame.key.ScancodeWrapper]]()
         self.pressed = Callbacks[StateEventContext[pygame.key.ScancodeWrapper]]()
+
 
 class EventsHandler:
     def __init__(self) -> None:

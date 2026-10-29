@@ -9,6 +9,7 @@ class FLAGS:
     debug_mode = False
     detailed_info = False
     event_info = False
+    init_info = False
     event_registers = False
     states_info = False
     state_context_info = False

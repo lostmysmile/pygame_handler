@@ -122,5 +122,5 @@ def test_registering_none_trigger_raises_type_error():
 def test_registering_none_callback_raises_type_error():
     registry = EventsDict()
 
-    with pytest.raises(TypeError, match="Expected callable"):
+    with pytest.raises(AssertionError, match="Action can not be None"):
         registry.register(pygame.KEYDOWN, None)  # type: ignore
