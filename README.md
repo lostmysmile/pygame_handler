@@ -91,6 +91,12 @@ scripts\test.bat
 - `scripts/` — Windows run/test helpers and virtual-environment scripts.
 - `pyproject.toml` — package metadata and dependencies.
 
+## Documentation
+
+- [Architecture overview](ARCHITECTURE.MD) — runtime flow, package responsibilities, and known limitations.
+- [Changelog](CHANGELOG.md) — notable changes in the current development line.
+- [Spritesheet helper notes](src/pygame_handler/spritesheets/README.md) — experimental module status and known import blockers.
+
 ## License
 
 pygame_handler is licensed under the MIT License. See [`LICENSE`](LICENSE) for the full text.
