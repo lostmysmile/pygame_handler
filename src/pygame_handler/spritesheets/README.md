@@ -22,14 +22,14 @@ The following problems were found in the current source and should be fixed befo
 1. **Export-name mismatch:** `spritesheets/__init__.py` imports lowercase `shape` and `size`, while `main.py` defines `Shape` and `Size`. As written, the package-level import cannot find those lowercase names.
 2. **Incorrect helper import:** `spritesheets/main.py` uses `from helper import cooldown` instead of importing the sibling module through the package. This assumes a top-level module named `helper` exists.
 3. **Undeclared dependency:** `spritesheets/helper.py` imports `keyboard`, but `keyboard` is not declared in `pyproject.toml`. The import is performed even when the interactive helper demo is not being used.
-4. **Grid dimensions need tests:** the sprite width/height calculations use the row and column counts in a way that may be transposed for non-square sheets. Add tests for square and non-square grids before relying on extraction coordinates.
+4. **Grid dimensions need tests:** sprite dimensions are calculated with integer division, so remainder pixels at the right or bottom edges can be left out. Add tests for square and rectangular grids to verify dimensions, slicing order, and remainder behavior.
 
 ## Recommended repair order
 
 1. Choose and consistently use the public names `Shape`/`Size` (or deliberately provide lowercase aliases) in `main.py` and `__init__.py`.
 2. Change the helper import to a package-relative import.
 3. Remove the top-level `keyboard` requirement from production imports if it is only needed by the standalone demo, or declare it as an appropriate optional dependency.
-4. Add tests that verify the number, size, and order of extracted sprites for both square and non-square grids.
+4. Add tests that verify the number, size, and order of extracted sprites for square and rectangular grids, including sheets whose dimensions are not evenly divisible by the grid.
 5. Add tests for animation index boundaries, cooldown timing, and calls to `draw_onto`.
 
 Until those changes are made and tested, treat this module as work in progress rather than a supported part of the library.
