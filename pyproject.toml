@@ -5,10 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pygame-handler"
 version = "0.1.1"
-requires-python = ">=3.14"
+requires-python = ">=3.15"
+description = "A system that helps build pygame game loops like a game engine"
 license = "MIT"
-license-files = ["LICENSE"]
-dependencies = ["ordered-set"]
+readme = "README.md" 
+dependencies = [
+    "ordered-set",
+    "python-dotenv"
+]
+
+[project.urls]
+Homepage = "https://github.com/lostmysmile/pygame_handler"
+
+authors = [
+    { name = "lostmysmile" }
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -24,7 +24,7 @@ def evaluate_string_option(value: Any) -> bool:
     return value in truthy_values
 
 
-def get_option[T = Any](optionname: str, default: T="false"):
+def get_option[T= Any](optionname: str, default: T="false"):
     from os import getenv as os_getenv
     return os_getenv(optionname, default)
 
@@ -38,21 +38,23 @@ def load_debug_settings():
 
     all_settings_value = evaluate_string_option(option_all)
 
-    for (setting_location, setting_name), setting_env_name in env_settings.items():
+    for (setting_location_name, setting_name), setting_env_name in env_settings.items():
         if option_all is not None:
-            option = get_option(setting_env_name,None)
-            new_value = evaluate_string_option(option) if option is not None else all_settings_value
+            option = get_option(setting_env_name, None)
+            value = evaluate_string_option(
+                option) if option is not None else all_settings_value
         else:
             option = get_option(setting_env_name)
-            new_value = evaluate_string_option(option)
+            value = evaluate_string_option(option)
 
-        if new_value == getattr(setting_location, setting_name):
+        if value == getattr(setting_location_name, setting_name):
             continue
-        
-        changed_list.append((setting_location, setting_name, new_value))
-        setattr(setting_location, setting_name, new_value)
+
+        changed_list.append((setting_location_name.__name__, setting_name, value))
+        setattr(setting_location_name, setting_name, value)
+
     show_updates = debugger.FLAGS.init_info
     if show_updates:
-        for setting_location, setting_name, new_value in changed_list:
-            print(f"Setting {setting_location.__name__}[{setting_name!r}] set to {new_value!r}")
+        for details in changed_list:
+            print("Setting {}[{!r}] set to {!r}".format(*details))
     print(f"Updated settings.")

@@ -1,4 +1,4 @@
-class NotificationMessages:
+class Notification:
     class Message:
         __slots__ = "_hidden", "_string"
         middle_character_for_add = " "
@@ -6,14 +6,14 @@ class NotificationMessages:
         def __init__(self, string: str, hidden: bool = False) -> None:
             self._string, self._hidden = string, hidden
 
-        def __add__(self, other: "NotificationMessages.Message | str"):
-            assert isinstance(other, (str, NotificationMessages.Message))
+        def __add__(self, other: "Notification.Message | str"):
+            assert isinstance(other, (str, Notification.Message))
             if isinstance(other, str):
                 new_message = (self._string+other)
             else:
-                new_message = f"{self}{NotificationMessages.Message.middle_character_for_add}{other}"
+                new_message = f"{self}{Notification.Message.middle_character_for_add}{other}"
 
-            return NotificationMessages.Message(new_message)
+            return Notification.Message(new_message)
 
         def __str__(self):
             return "" if self._hidden else self._string
@@ -32,13 +32,13 @@ class NotificationMessages:
     init_done = Message("Finished initializing")
 
     @classmethod
-    def get_message(cls, message_name: str):
+    def get_notification_message(cls, message_name: str):
         try:
             attr = getattr(cls, message_name)
             assert isinstance(attr, cls.Message)
         except AttributeError:
             raise ValueError(
-                f"Message doesn't exist; use {cls.create_custom.__name__} to add {cls.Message.__name__}({message_name!r})")
+                f"Message doesn't exist; use {cls.new_notification_message.__name__} to add {cls.Message.__name__}({message_name!r})")
         except AssertionError:
             raise ValueError(f"Not a valid message name: {message_name!r}")
 
@@ -46,11 +46,11 @@ class NotificationMessages:
 
     @classmethod
     def display(cls, message_name: str):
-        message_item = cls.get_message(message_name)
+        message_item = cls.get_notification_message(message_name)
         message_item.display()
 
     @classmethod
-    def create_custom(cls, name: str, message: str, hidden: bool = False):
+    def new_notification_message(cls, name: str, message: str, hidden: bool = False):
         new_messageItem = cls.Message(message, hidden)
         setattr(cls, name, new_messageItem)
         return new_messageItem
@@ -58,14 +58,14 @@ class NotificationMessages:
 
 if __name__ == "__main__":
     def test0():
-        NotificationMessages.create_custom("testing", "enabled test mode").display()
-        NotificationMessages.display("testing")
+        Notification.new_notification_message("testing", "enabled test mode").display()
+        Notification.display("testing")
 
     def test1():
-        NotificationMessages.display(1)  # pyright: ignore[reportArgumentType]
+        Notification.display(1)  # pyright: ignore[reportArgumentType]
 
     def test2():
-        NotificationMessages.get_message("__slots__")
+        Notification.get_notification_message("__slots__")
 
     # Run each test independently so one error doesn't stop the others.
     for test in (test0, test1, test2):

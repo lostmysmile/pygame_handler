@@ -9,7 +9,7 @@ from pathlib import Path
 
 from helper.env import load_debug_settings as env_load_debug_settings
 from helper.debugger import FLAGS
-from helper.logger import notifications, show_message
+from helper.logger import notification_system, show_message
 
 from state import NoMoreStates, States, State
 from graphics import Window, Background
@@ -17,7 +17,7 @@ from graphics import Window, Background
 
 class Game:
     def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
-        notifications.NotificationMessages.init.display()
+        notification_system.Notification.init.display()
 
         self.States = States().with_handler(self)
         self.DEFAULT_STATE = self.States.default_state
@@ -29,7 +29,7 @@ class Game:
 
         env_load_debug_settings()
 
-        notifications.NotificationMessages.init_done.display()
+        notification_system.Notification.init_done.display()
 
     def get_inputs(self):
         keys_stream: ScancodeWrapper = pygame.key.get_pressed()
@@ -53,7 +53,7 @@ class Game:
             print("Updating state...")
 
     def setUp(self):
-        notifications.NotificationMessages.welcome.display()
+        notification_system.Notification.welcome.display()
         if not self.States:
             if FLAGS.states_transitions:
                 print("No states found.")
@@ -110,7 +110,7 @@ class Game:
             if FLAGS.run_once is True:
                 break
 
-        notifications.NotificationMessages.goodbye.display()
+        notification_system.Notification.goodbye.display()
 
     run = game_loop
 
