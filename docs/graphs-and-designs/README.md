@@ -9,5 +9,7 @@ This folder collects visual documentation for how `pygame_handler` currently wor
 - [Graphs](graphs.md) — runtime frame flow, component relationships, and event dispatch.
 - [Design overview](designs.md) — component responsibilities, scene lifecycle, and safe extension points.
 - [Design patterns](patterns.md) — patterns used or approached by the implementation, with caveats where behavior is incomplete.
+- [UML diagrams](uml.md) — current class relationships, game-loop sequence, and scene lifecycle.
+- [ERD status](erd.md) — explains why a database ERD is not currently applicable and when one should be added.
 
 The graphs use Mermaid inside Markdown, so GitHub can render them directly without maintaining exported image files. When a diagram changes, update the corresponding Mermaid source in this folder.
