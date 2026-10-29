@@ -1,7 +1,12 @@
 README.md
 pyproject.toml
-src/helper/__init__.py
-src/helper/debugger.py
+src/helper/env.py
+src/helper/settings.py
+src/helper/debug/__init__.py
+src/helper/debug/flags.py
+src/helper/logger/__init__.py
+src/helper/logger/messages.py
+src/helper/logger/notifications.py
 src/pygame_handler.egg-info/PKG-INFO
 src/pygame_handler.egg-info/SOURCES.txt
 src/pygame_handler.egg-info/dependency_links.txt
@@ -16,6 +21,7 @@ src/system/graphics/__init__.py
 src/system/graphics/main.py
 src/system/state/State.py
 src/system/state/__init__.py
+src/system/state/actions.py
 src/system/state/events/ENUMS.py
 src/system/state/events/__init__.py
 src/system/state/events/events.py
