@@ -6,9 +6,13 @@ from pygame.key import ScancodeWrapper
 from collections import defaultdict, deque
 from typing import Optional
 
+from state.events import DrawEventContext, EventsHandler, StateEventContext
+
+from .events import ENUMS as EVENT_NUMS
+
 
 if TYPE_CHECKING:
-    from ..main import Game
+    from ..system.main import Game
 
 from helper import debug
 
@@ -18,8 +22,8 @@ from pathlib import Path
 
 
 from sys import path as sys_path
-from .events import EventsHandler, StateEventContext, DrawEventContext, events, ENUMS as EVENT_NUMS
-from ..graphics import EntitiesHandler
+from .events import events
+from graphics import EntitiesHandler
 
 
 class NoMoreStates(Exception):

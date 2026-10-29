@@ -2,4 +2,4 @@
 
 ## How to run?
 
-    Type `py -m system.main` in terminal
+> Type ```py -m system.main``` in terminal

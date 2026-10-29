@@ -139,15 +139,16 @@ if __name__ == '__main__':
         while running:
             window.clock.tick()   # Delta time in seconds
             events = pygame.event.get()
-            keys = pygame.key.get_pressed()
-            # for event in events:
-            #     if event.type == pygame.QUIT:
-            #         running = False
+            keys_pressed = pygame.key.get_just_pressed()
+            keys_stream = pygame.key.get_pressed()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    running = False
             if __debug__:
                 continue
             if states.active_state:
                 states.active_state.handle_pygame_events(events)
-                states.active_state.handle_keyboard_input(keys)
+                states.active_state.handle_keyboard_input(keys_pressed,keys_stream)
                 states.active_state.update(window.clock.dt)
             window.draw(states.active_state)
         pygame.quit()

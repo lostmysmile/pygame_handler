@@ -9,8 +9,8 @@ from pathlib import Path
 
 from helper import debug, env
 from helper.logger import notifications
-from .state import State, States, NoMoreStates  # type: ignore
-from .graphics import Window, Background  # type: ignore
+from state import NoMoreStates, States,State
+from graphics import Window, Background  # type: ignore
 
 from helper.logger import show_message
 
@@ -81,6 +81,8 @@ class Game:
             background_handler=background,
             fps_target=target_fps)
 
+        env.load_debug_settings()
+
         notifications.NotificationMessages.init_done.display()
 
     def get_inputs(self):
@@ -105,8 +107,6 @@ class Game:
             print("Updating state...")
 
     def setUp(self):
-        env.load_settings()
-
         notifications.NotificationMessages.welcome.display()
         if not self.States:
             if debug.FLAGS.states_transitions:
@@ -171,11 +171,12 @@ class Game:
 
 if __name__ == '__main__':
     def test1():
+        from helper import debug
+        debug.FLAGS.set_all(True)
+
         game = Game()
 
         # game.DEFAULT_STATE.running = False# DEBUG
-        from helper import debug
-        debug.FLAGS.set_all(True)
         # debugger.debug.run_once = True
         game.run()
     test1()

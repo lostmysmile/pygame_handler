@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from .. import State
 
 
-from ..events import ENUMS
+from . import ENUMS
 
 type Trigger = int | ENUMS.TRIGGERS
 
