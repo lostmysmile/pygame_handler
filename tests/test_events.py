@@ -110,5 +110,6 @@ def test_registering_none_raises_value_error():
 
     def key_pressed():
         ...
+        
     with pytest.raises(ValueError, match="Cannot register NoneType"):
-        registry.register(pygame.KEYDOWN,key_pressed)
+        registry.register(None,key_pressed)

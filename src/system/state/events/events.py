@@ -171,7 +171,7 @@ class EventsDict[
         if type(triggers) is int or isinstance(triggers, ENUMS.TRIGGERS):
             triggers_to_register: Iterable[TriggerT] = (cast(TriggerT, triggers),)
         else:
-            if isinstance(triggers, str):
+            if not isinstance(triggers, (str,int)):
                 raise TypeError(
                     f"Expected a trigger or iterable of triggers, got: {triggers!r}"
                 )

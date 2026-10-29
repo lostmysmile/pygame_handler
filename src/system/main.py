@@ -13,8 +13,7 @@ from .state import State, States, NoMoreStates  # type: ignore
 from .graphics import Window, Background  # type: ignore
 
 from helper.logger import show_message
-print(show_message(("hewwo ;3")))
-exit()
+
 class movement_handler:
     def __init__(self, handler: Game) -> None:
         self.game_handler = handler
@@ -22,19 +21,19 @@ class movement_handler:
     @property
     def distance_error_amount(self):
         "Convert ms to seconds for the final distance calculation"
-        return self.game_handler.window.clock.dt / 1000
+        return self.game_handler.window.clock.dt 
 
-    def right(self, amount: float) -> float:
-        return self.distance_error_amount * amount
+    def right(self, velocity: float) -> float:
+        return self.distance_error_amount * velocity
 
-    def left(self, amount: float) -> float:
-        return self.distance_error_amount * amount
+    def left(self, velocity: float) -> float:
+        return self.distance_error_amount * velocity
 
-    def up(self, amount: float) -> float:
-        return self.distance_error_amount * amount
+    def up(self, velocity: float) -> float:
+        return self.distance_error_amount * velocity
 
-    def down(self, amount: float) -> float:
-        return self.distance_error_amount * amount
+    def down(self, velocity: float) -> float:
+        return self.distance_error_amount * velocity
 
     def calculate_diagonal_movement(self, right: float, up: float):
         # Calculate the total length of the input vector
