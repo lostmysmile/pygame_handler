@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import Self, TYPE_CHECKING
+from typing import Any, Self, TYPE_CHECKING
 from pygame.key import ScancodeWrapper
 from collections import defaultdict, deque
 from typing import Optional
@@ -67,65 +67,86 @@ class State:
         pass  # Default: do nothing
 
     def handle_pygame_events(self, pygame_events: list[pygame.event.Event]) -> None:
-
-        events_with_type = {event.type: event for event in pygame_events}
-
-        events_and_listeners = chain(
-            States.Global_Events.Pygame_Event,
-            self.events_handler.Pygame_Event
-        )
-
-        # if debugger.FLAGS.debug and debugger.FLAGS.detailed_info:
-        #     print((events_and_listeners))
-
-        handled = set()
-
-        for event_trigger, listeners in events_and_listeners:
-            if event_trigger == EVENT_NUMS.TRIGGERS.NONE:
-                if debugger.FLAGS.debug and debugger.FLAGS.event_info:
-                    print(f"<{event_trigger!r}<no-trigger> for {listeners!r}")
-
+        handled = set()  # TODO find better name
+        for event in pygame_events:
+            actions = (States.Global_Events.Pygame_Event.registered_actions | self.events_handler.Pygame_Event.registered_actions)
+            generic_actions = actions.get(EVENT_NUMS.TRIGGERS.ALL)
+            
+            specified_actions = actions.get(event.type)
+            triggered_actions = (generic_actions) | specified_actions
+            if not actions:
                 continue
 
-            if debugger.FLAGS.debug and debugger.FLAGS.event_info and debugger.FLAGS.detailed_info:
-                if event_trigger != EVENT_NUMS.TRIGGERS.ALL:
-                    print(f"Checking: {event_trigger!r}, {listeners!r}")
+            ctx = StateEventContext(self, event)
 
-            event = events_with_type.get(event_trigger)  # type: ignore
+            for action in triggered_actions:
+                match action.invocation_policy:
+                    case EVENT_NUMS.invocation_policy.ONCE_PER_LOOP:
+                        if action in handled :
+                            continue
+                        else: 
+                            handled.add(action)
+                action.action(ctx)
+    # def handle_pygame_events(self, pygame_events: list[pygame.event.Event]) -> None:
 
-            if (event_trigger == EVENT_NUMS.TRIGGERS.ALL) or (event is not None):
-                for listener in listeners:
-                    if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP and listener.action in handled:
-                        if debugger.FLAGS.debug and debugger.FLAGS.event_info:
-                            print(
-                                f"Skipped {listener.action!r}; Has already been triggered")
-                        continue
+    #     events_with_type = {event.type: event for event in pygame_events}
 
-                    if debugger.FLAGS.debug and debugger.FLAGS.event_info:
-                        if event_trigger == EVENT_NUMS.TRIGGERS.ALL:
-                            print(
-                                f"handling <GENERIC_TRIGGER>{EVENT_NUMS.TRIGGERS.ALL} with", end="",
-                            )
-                        else:
-                            assert isinstance(event_trigger, int)
-                            print(
-                                f"handling {event!r}"
-                                f"({event_trigger}) with",
-                                end="",
-                            )
+    #     events_and_listeners = chain(
+    #         States.Global_Events.Pygame_Event,
+    #         self.events_handler.Pygame_Event
+    #     )
 
-                        print(f"{listener}.")
+    #     # if debugger.FLAGS.debug and debugger.FLAGS.detailed_info:
+    #     #     print((events_and_listeners))
 
-                    if debugger.FLAGS.debug and debugger.FLAGS.event_info:
-                        print(
-                            f"Triggering {listener.invocation_policy}: {listener.action!r} ")
+    #     handled = set()
 
-                    ctx = StateEventContext(
-                        self, event, dt=self.handler.game_handler.window.clock.dt)
+    #     for event_trigger, listeners in events_and_listeners:
+    #         if event_trigger == EVENT_NUMS.TRIGGERS.NONE:
+    #             if debugger.FLAGS.debug and debugger.FLAGS.event_info:
+    #                 print(f"<{event_trigger!r}<no-trigger> for {listeners!r}")
 
-                    listener.action(ctx)
-                    if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP:
-                        handled.add(listener.action)
+    #             continue
+
+    #         if debugger.FLAGS.debug and debugger.FLAGS.event_info and debugger.FLAGS.detailed_info:
+    #             if event_trigger != EVENT_NUMS.TRIGGERS.ALL:
+    #                 print(f"Checking: {event_trigger!r}, {listeners!r}")
+
+    #         event = events_with_type.get(event_trigger)  # type: ignore
+
+    #         if (event_trigger == EVENT_NUMS.TRIGGERS.ALL) or (event is not None):
+    #             for listener in listeners:
+    #                 if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP and listener.action in handled:
+    #                     if debugger.FLAGS.debug and debugger.FLAGS.event_info:
+    #                         print(
+    #                             f"Skipped {listener.action!r}; Has already been triggered")
+    #                     continue
+
+    #                 if debugger.FLAGS.debug and debugger.FLAGS.event_info:
+    #                     if event_trigger == EVENT_NUMS.TRIGGERS.ALL:
+    #                         print(
+    #                             f"handling <GENERIC_TRIGGER>{EVENT_NUMS.TRIGGERS.ALL} with", end="",
+    #                         )
+    #                     else:
+    #                         assert isinstance(event_trigger, int)
+    #                         print(
+    #                             f"handling {event!r}"
+    #                             f"({event_trigger}) with",
+    #                             end="",
+    #                         )
+
+    #                     print(f"{listener}.")
+
+    #                 if debugger.FLAGS.debug and debugger.FLAGS.event_info:
+    #                     print(
+    #                         f"Triggering {listener.invocation_policy}: {listener.action!r} ")
+
+    #                 ctx = StateEventContext(
+    #                     self, event, dt=self.handler.game_handler.window.clock.dt)
+
+    #                 listener.action(ctx)
+    #                 if listener.invocation_policy == EVENT_NUMS.invocation_policy.ONCE_PER_LOOP:
+    #                     handled.add(listener.action)
 
     def update(self, dt: float) -> None:
         ctx = StateEventContext(

@@ -92,10 +92,11 @@ class Game:
         pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
         active_state.handle_keyboard_input(keys=pressed_keys)
 
-        triggered_events: list[Event] = pygame.event.get()
+        expected_events = active_state.events_handler.Pygame_Event.registered_actions.keys()
+        triggered_events: list[Event] = pygame.event.get(expected_events)
         active_state.handle_pygame_events(triggered_events)
 
-    def run_loop(self):
+    def setUp(self):
         if not self.States:
             if debugger.FLAGS.states_transitions:
                 print("No states found.")
@@ -103,8 +104,13 @@ class Game:
             self.States.deque.append(self.States.default_state)
 
         self.States.activate_next_state()
-        # self.States.prev_state = None  # remove default state from 
+        # self.States.prev_state = None  # remove default state from
 
+    def optimize_game(self):
+        ...
+
+    def game_loop(self):
+        self.setUp()
 
         active_state = self.States.active_state
 
@@ -146,7 +152,7 @@ class Game:
         if debugger.settings.goodbye:
             print("Bye bye!")
 
-    run = run_loop
+    run = game_loop
 
 
 if __name__ == '__main__':
@@ -157,5 +163,5 @@ if __name__ == '__main__':
         from helper import debugger
         debugger.FLAGS.set_all(True)
         debugger.debug.run_once = True
-        game.run_loop()
+        game.game_loop()
     test1()

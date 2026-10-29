@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
+from types import UnionType
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack, cast
 import pygame
 
@@ -76,25 +77,30 @@ class CallbackInfo[**P, R]:
 class Callbacks[ContextT, R = Any]:
     __slots__ = ("registered_actions",)
 
-    def __init__(self) -> None:
-        self.registered_actions: list[
+    def __init__(self, *,
+                 custom_registered_iterable: Optional[Iterable[CallbackInfo[[ContextT], R]]] = None) -> None:
+        assert isinstance(custom_registered_iterable, Iterable)
+
+        self.registered_actions: set[
             CallbackInfo[[ContextT], R]
-        ] = []
+        ] = set(custom_registered_iterable) if custom_registered_iterable is not None else set()
 
     def __iter__(self):
         yield from self.registered_actions
 
-    def _invoke_all_with_info(self, ctx: ContextT) -> list[tuple[CallbackInfo[[ContextT], R], R]]:
-        return [
-            (info, info.action(ctx))
-            for info in self.registered_actions
-        ]
+    def _iterable_invoke_all(self, ctx: ContextT) -> Generator[tuple[CallbackInfo[[ContextT], R], R], Any, None]:
+        for info in self.registered_actions:
+            yield (info, info.action(ctx))
 
-    def _invoke_all(self, ctx: ContextT) -> list[R]:
-        return [
+    def _invoke_all(self, ctx: ContextT) -> None:
+        for info in self.registered_actions:
             info.action(ctx)
-            for info in self.registered_actions
-        ]
+
+    def __or__(self: Self, value: Callbacks[ContextT,R]|None)  -> Callbacks[ContextT, R]:
+        if not value:
+            return self
+        new_list = self.registered_actions|value.registered_actions
+        return Callbacks(custom_registered_iterable=new_list)
 
     def register(
         self,
@@ -106,7 +112,7 @@ class Callbacks[ContextT, R = Any]:
             action,
             invocation_policy=invocation_policy,
         )
-        self.registered_actions.append(info)
+        self.registered_actions.add(info)
         return action
 
 
@@ -212,7 +218,7 @@ class EventsDict[
         yield from self.registered_actions.keys()
 
     @property
-    def registered_events(self):
+    def registered_events_actions(self):
         yield from self.registered_actions.values()
 
     def __iter__(self):
@@ -241,14 +247,16 @@ class EventsQueue[ContextT, R= Any]:
 
 
 class StateEvents:
-    __slots__ = "draw_events_Queue", "update_events_Queue", "on_enter", "on_leave"
+    __slots__ = ("draw_events_Queue", "update_events_Queue",
+                 "on_enter", "on_leave", "on_exit", "on_start")
 
     def __init__(self) -> None:
         self.draw_events_Queue = EventsQueue[DrawEventContext]()
-        self.update_events_Queue = EventsQueue[StateEventContext[None]](
-        )
-        self.on_enter = Callbacks[StateEventContext[None], Any]()
-        self.on_leave = Callbacks[StateEventContext[None], Any]()
+        self.update_events_Queue = EventsQueue[StateEventContext[None]]()
+        self.on_enter = Callbacks[StateEventContext[None]]()
+        self.on_leave = Callbacks[StateEventContext[None]]()
+        self.on_start = Callbacks[StateEventContext[None]]()
+        self.on_exit = Callbacks[StateEventContext[None]]()
 
 
 class EventsHandler:
