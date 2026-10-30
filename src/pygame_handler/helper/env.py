@@ -16,7 +16,6 @@ env_configs = {
     (debugger.FLAGS, "time_internals"): "TIME_INTERNALS",
 }
 
-load_dotenv()
 
 
 def evaluate_string_option(value: str) -> bool:
@@ -30,6 +29,7 @@ def get_option[T= Any](optionname: str, default: T="false"):
 
 
 def load_debug_configs():
+    load_dotenv()
     changed_list = []
 
     print(f"Loading {len(env_configs)} env configs...")
