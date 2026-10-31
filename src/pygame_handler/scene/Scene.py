@@ -4,7 +4,6 @@ from itertools import chain
 from typing import Any, Self, TYPE_CHECKING
 from pygame.key import ScancodeWrapper
 from collections import defaultdict, deque
-from typing import Optional
 
 from pygame_handler.scene.events import DrawEventContext, EventsHandler, StateEventContext
 
@@ -38,6 +37,7 @@ class NoPreviousStates(Exception):
 def name_counter(name: str, names=defaultdict[str, int](int)):
     return names[name]
 
+from operator import attrgetter
 
 class Scene:
     _counter = -1
@@ -63,12 +63,14 @@ class Scene:
 
     def handle_keyboard_input(self, keys_pressed: ScancodeWrapper,keys_stream:ScancodeWrapper) -> None:
         ctx = StateEventContext(self, keys_pressed)
-        Scenes_handler.Global_Events.Keyboard_Event.pressed._invoke_all(ctx)
+        self._trigger_event(ctx,"Keyboard_Event","pressed")
+        # Scenes_handler.Global_Events.Keyboard_Event.pressed._invoke_all(ctx)
         self.events_handler.Keyboard_Event.pressed._invoke_all(ctx)
 
         ctx.triggered_event = keys_stream
-        Scenes_handler.Global_Events.Keyboard_Event.pressed._invoke_all(ctx)
-        self.events_handler.Keyboard_Event.pressed._invoke_all(ctx)
+        self._trigger_event(ctx,"Keyboard_Event","streamed")
+        # Scenes_handler.Global_Events.Keyboard_Event.streamed._invoke_all(ctx)
+        # self.events_handler.Keyboard_Event.streamed._invoke_all(ctx)
 
 
     def handle_pygame_events(self, pygame_events: list[pygame.event.Event]) -> None:
@@ -108,19 +110,20 @@ class Scene:
         ctx = StateEventContext(
             self, None, dt=dt)
 
-        if FLAGS.debug_mode:
-            if FLAGS.state_context_info:
+        if FLAGS.debug_mode and FLAGS.state_context_info:
                 print("context:", ctx)
 
-        self.handler.Global_Events.State_Events.update_events_Queue.before._invoke_all(
-            ctx)
-        self.events_handler.State_Events.update_events_Queue.before._invoke_all(ctx)
+        # self.handler.Global_Events.State_Events.update_events_Queue.before._invoke_all(
+        #     ctx)
+        # self.events_handler.State_Events.update_events_Queue.before._invoke_all(ctx)
+        self._trigger_event(ctx,"State_Events","update_events_Queue.before")
 
         self.entities.update()
 
-        self.handler.Global_Events.State_Events.update_events_Queue.after._invoke_all(
-            ctx)
-        self.events_handler.State_Events.update_events_Queue.after._invoke_all(ctx)
+        self._trigger_event(ctx,"State_Events","update_events_Queue.after")
+        # self.handler.Global_Events.State_Events.update_events_Queue.after._invoke_all(
+        #     ctx)
+        # self.events_handler.State_Events.update_events_Queue.after._invoke_all(ctx)
 
     def draw_on(self, surf: pygame.Surface) -> None:
         ctx = DrawEventContext(self)
@@ -128,36 +131,57 @@ class Scene:
         if FLAGS.debug_mode and FLAGS.state_context_info:
             print("context:", ctx)
 
-        self.handler.Global_Events.State_Events.draw_events_Queue.before._invoke_all(
-            ctx)
-        self.events_handler.State_Events.draw_events_Queue.before._invoke_all(ctx)
+        # self.handler.Global_Events.State_Events.draw_events_Queue.before._invoke_all(
+        #     ctx)
+        # self.events_handler.State_Events.draw_events_Queue.before._invoke_all(ctx)
+
+        self._trigger_event(ctx,"State_Events","draw_events_Queue.before")
 
         self.entities.draw_on(surf)
 
-        self.handler.Global_Events.State_Events.draw_events_Queue.after._invoke_all(
-            ctx)
-        self.events_handler.State_Events.draw_events_Queue.after._invoke_all(ctx)
+        self._trigger_event(ctx,"State_Events","draw_events_Queue.after")
+        # self.handler.Global_Events.State_Events.draw_events_Queue.after._invoke_all(
+        #     ctx)
+        # self.events_handler.State_Events.draw_events_Queue.after._invoke_all(ctx)
 
     def on_leave(self):
+        if FLAGS.debug_mode and FLAGS.states_transitions:
+            print(f"Leaving: {self}")
+
         ctx = StateEventContext[None](self)
-        if FLAGS.states_transitions:
-            print("Leaving", self, "...")
-        Scenes_handler.Global_Events.State_Events.on_leave._invoke_all(ctx)
-        self.events_handler.State_Events.on_leave._invoke_all(ctx)
+        # Scenes_handler.Global_Events.State_Events.on_leave._invoke_all(ctx)
+        # self.events_handler.State_Events.on_leave._invoke_all(ctx)
+        
+        self._trigger_event(ctx,"State_Events","on_leave")
 
     def on_enter(self):
+        if FLAGS.debug_mode and FLAGS.states_transitions:
+            print(f"Entering: {self}")
+
         ctx = StateEventContext[None](self)
-        if FLAGS.states_transitions:
-            print("Entering:", self)
-        Scenes_handler.Global_Events.State_Events.on_enter._invoke_all(ctx)
-        self.events_handler.State_Events.on_enter._invoke_all(ctx)
+        # Scenes_handler.Global_Events.State_Events.on_enter._invoke_all(ctx)
+        # self.events_handler.State_Events.on_enter._invoke_all(ctx)
+
+        self._trigger_event(ctx,"State_Events","on_enter")
+        
+    def _trigger_event(self,ctx: StateEventContext|DrawEventContext,event_type:str,event_name:str):
+        invoker_name = "_invoke_all"
+        
+        global_events_getter = attrgetter(f"{event_type}.{event_name}.{invoker_name}")
+        local_events_getter=attrgetter(f"{event_type}.{event_name}.{invoker_name}")
+
+        global_events_invoker = global_events_getter(Scenes_handler.Global_Events)
+        local_events_invoker = local_events_getter(self.events_handler)
+        
+        global_events_invoker(ctx)
+        local_events_invoker(ctx)
 
 
 class Scenes_handler:
     Global_Events = EventsHandler()
 
     def __init__(self) -> None:
-        self.prev_state: Optional[Scene] = None
+        self.prev_state: Scene|None = None
         self.active_state: Scene
 
         self.deque: deque[Scene] = deque()

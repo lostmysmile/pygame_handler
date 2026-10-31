@@ -3,7 +3,8 @@ from functools import wraps
 import keyboard
 from pathlib import Path
 import time
-from typing import Any, Callable, Literal, Optional, TypeVar, ParamSpec
+from typing import Any,  Literal , TypeVar, ParamSpec
+from collections.abc import Callable
 
 
 def load_file(filename: str, Directory: Path | str = ""):
@@ -40,13 +41,13 @@ class cooldown:
         self.interval: float = interval
         self.first_result: bool = first_check_result
 
-    def reset_timer(self, item: Optional[Any] = None):
+    def reset_timer(self, item: object | None = None):
         del self._timers[item]
 
     def reset_all_timers(self):
         self._timers.clear()
 
-    def has_passed(self, item: Optional[Any] = None) -> bool:
+    def has_passed(self, item: object | None = None) -> bool:
         now: float = time.perf_counter()
 
         try:

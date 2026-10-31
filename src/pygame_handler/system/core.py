@@ -1,5 +1,4 @@
 import math
-from typing import Optional
 
 import pygame
 from pygame.key import ScancodeWrapper
@@ -7,10 +6,15 @@ from pygame.event import Event
 
 from pathlib import Path
 
-from pygame_handler.helper.env import load_debug_configs as env_load_debug_configs
+from pprint import pprint
+from pygame_handler.helper.configs.loader import loader 
+pprint(loader.__dict__)
+loader.loadini()
+exit()
+from pygame_handler.helper.configs.loader.ini import load_debug_configs as ini_load_debug_configs
+from pygame_handler.helper.configs.loader.env import load_debug_configs as env_load_debug_configs
 from pygame_handler.helper.debugger import FLAGS
 from pygame_handler.helper.logger import notification_system
-
 from pygame_handler.helper.logger import show_message
 from pygame_handler.scene import NoMoreStates, Scenes_handler
 from pygame_handler.scene import Scene
@@ -18,7 +22,7 @@ from pygame_handler.graphics import Window, Background
 
 
 class Game:
-    def __init__(self, window_name: str = "Window", background: Optional[Background] = None, target_fps: float = 0) -> None:
+    def __init__(self, window_name: str = "Window", background: Background | None = None, target_fps: float = 0) -> None:
         notification_system.Notification.init.display()
 
         self.States = Scenes_handler().with_handler(self)
@@ -29,7 +33,7 @@ class Game:
             background_handler=background,
             fps_target=target_fps)
 
-        env_load_debug_configs()
+        ini_load_debug_configs()
 
         notification_system.Notification.init_done.display()
 

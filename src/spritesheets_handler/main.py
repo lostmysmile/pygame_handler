@@ -1,6 +1,9 @@
-from helper import cooldown
+from spritesheets_handler.helper import cooldown
+
+
 from pathlib import Path
-from typing import Any, Generator, Iterable, Optional, NamedTuple,  Tuple, Union, cast
+from collections.abc import Generator, Iterable
+from typing import Any, NamedTuple,  Tuple, Union, cast
 import pygame
 
 dir_path = Path(__file__).parent
@@ -144,7 +147,7 @@ class animation_handler:
     display_next_animation = False
     """_skips current sprite if set to true_"""
 
-    def __init__(self, sprites_sheet: sprites_sheet, IndexOfFirstSprite: int = 0, IndexOfLastSprite: Optional[int] = None):
+    def __init__(self, sprites_sheet: sprites_sheet, IndexOfFirstSprite: int = 0, IndexOfLastSprite: int|None = None):
         IndexOfLastSprite = IndexOfLastSprite if IndexOfLastSprite is not None else len(
             sprites_sheet.Sprites)
 

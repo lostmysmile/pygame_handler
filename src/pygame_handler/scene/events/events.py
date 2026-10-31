@@ -2,8 +2,8 @@ from __future__ import annotations
 from ordered_set import OrderedSet
 
 from collections import defaultdict, namedtuple
-from types import UnionType
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, LiteralString, Optional, Self, Union, Unpack, cast
+from collections.abc import Callable, Generator, Iterable
+from typing import TYPE_CHECKING, Any, LiteralString, Self, Unpack, cast
 import pygame
 
 
@@ -78,7 +78,7 @@ class Callbacks[ContextT, R= Any]:
     __slots__ = ("registered_actions",)
 
     def __init__(self, *,
-                 custom_registered_iterable: Optional[Iterable[CallbackInfo[[ContextT], R]]] = None) -> None:
+                 custom_registered_iterable: Iterable[CallbackInfo[[ContextT], R]] | None = None) -> None:
         assert isinstance(custom_registered_iterable,
                           Iterable) or custom_registered_iterable is None, custom_registered_iterable
 
@@ -285,15 +285,16 @@ class EventsQueue[ContextT, R= Any]:
 
 class StateEvents:
     __slots__ = ("draw_events_Queue", "update_events_Queue",
-                 "on_enter", "on_leave", "on_exit", "on_start")
+                 "on_enter", "on_leave", "on_destroy", "on_create")
 
     def __init__(self) -> None:
         self.draw_events_Queue = EventsQueue[DrawEventContext]()
         self.update_events_Queue = EventsQueue[StateEventContext[None]]()
+
         self.on_enter = Callbacks[StateEventContext[None]]()
         self.on_leave = Callbacks[StateEventContext[None]]()
-        self.on_start = Callbacks[StateEventContext[None]]()
-        self.on_exit = Callbacks[StateEventContext[None]]()
+        self.on_create = Callbacks[StateEventContext[None]]()
+        self.on_destroy = Callbacks[StateEventContext[None]]()
 
 
 class KeyboardEvents:

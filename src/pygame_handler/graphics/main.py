@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
+
 
 import pygame
 from pathlib import Path
@@ -121,7 +122,7 @@ class Window:
         if self.background:
             self.background.update()
 
-    def draw(self, state: Union[Scene, None] = None) -> None:
+    def draw(self, state: Scene| None = None) -> None:
         if self.background:
             self.background.draw_on(self.screen)
         if state:

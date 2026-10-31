@@ -8,10 +8,10 @@ from pathlib import Path
 import pygame
 
 
-WORKERS = 4
+WORKERS = 5
 TARGET_FPS = 60
-DECODE_BUDGET = 4
-QUEUE_SIZE = WORKERS * 2 +2
+DECODE_BUDGET = 5
+QUEUE_SIZE = 0 #WORKERS * 2 +2
 IMAGE_PATH = Path(r"C:\Users\mrmmo\Desktop\python\pygame_handler\src\debug_sprite.png")
 
 
@@ -79,7 +79,8 @@ async def main():
         asyncio.create_task(
             image_loader(paths, results)
         )
-    ]* (WORKERS) #TODO CHANGE TO LIST MULTI
+    for _ in range(WORKERS)
+    ]
 
     running = True
     completed = 0
@@ -157,7 +158,8 @@ async def main():
                 max(0, frame_duration - elapsed)
             )
 
-            if completed == len(image_paths):
+            # if completed == len(image_paths):
+            if all(map(lambda worker: worker.cancelled(),workers)):
                 running = False
 
     finally:
