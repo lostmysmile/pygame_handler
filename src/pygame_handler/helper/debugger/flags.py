@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 
-
+class testing:
+    idk = "hi"
 
 class FLAGS:
     __slots__ = ()
@@ -9,14 +10,17 @@ class FLAGS:
     debug_mode = False
     detailed_info = False
     event_info = False
-    init_info = False
+    init_info = True
+    config_info = True
     event_registers = False
     states_info = False
     state_context_info = False
     states_transitions = False
-
+    
     # TODO ADD TIMERS FOR PROFILING EACH STEP OF THE CODE
     time_internals = False
+
+    test = testing
 
     @classmethod
     def set(cls, bunch: Iterable[str], state: bool = False):

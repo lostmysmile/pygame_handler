@@ -6,13 +6,8 @@ from pygame.event import Event
 
 from pathlib import Path
 
-from pprint import pprint
-from pygame_handler.helper.configs.loader import loader 
-pprint(loader.__dict__)
-loader.loadini()
-exit()
-from pygame_handler.helper.configs.loader.ini import load_debug_configs as ini_load_debug_configs
-from pygame_handler.helper.configs.loader.env import load_debug_configs as env_load_debug_configs
+from pygame_handler.helper.configs.loader import loadini as loadini_configs
+from pygame_handler.helper.configs.loader import loadenv as loadenv_configs
 from pygame_handler.helper.debugger import FLAGS
 from pygame_handler.helper.logger import notification_system
 from pygame_handler.helper.logger import show_message
@@ -33,7 +28,7 @@ class Game:
             background_handler=background,
             fps_target=target_fps)
 
-        ini_load_debug_configs()
+        loadini_configs()
 
         notification_system.Notification.init_done.display()
 

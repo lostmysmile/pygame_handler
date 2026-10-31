@@ -3,61 +3,52 @@ from dotenv import load_dotenv as load_dotenv
 
 from typing import Any
 
-env_configs = {
-    (debugger.FLAGS, "run_once"): "RUN_ONCE",
-    (debugger.FLAGS, "debug_mode"): "DEBUG_MODE",
-    (debugger.FLAGS, "detailed_info"): "DETAILED_INFO",
-    (debugger.FLAGS, "init_info"): "INIT_INFO",
-    (debugger.FLAGS, "event_info"): "EVENT_INFO",
-    (debugger.FLAGS, "event_registers"): "EVENT_REGISTERS",
-    (debugger.FLAGS, "states_info"): "STATES_INFO",
-    (debugger.FLAGS, "state_context_info"): "STATE_CONTEXT_INFO",
-    (debugger.FLAGS, "states_transitions"): "STATES_TRANSITIONS",
-    (debugger.FLAGS, "time_internals"): "TIME_INTERNALS",
-}
+from .core import MISSING,expected_env_configs,env_FILE_NAME,truthy_values
 
 
-
-def evaluate_string_option(value: str) -> bool:
-    truthy_values = "1", "true", "on"
-    return value.lower() in truthy_values
+def evaluate_boolean(string: str) -> bool:
+    return string.lower() in truthy_values
 
 
-def get_option[T= Any](optionname: str, default: T="false"):
-    from os import getenv as os_getenv
-    return os_getenv(optionname, default)
+from os import getenv as os_getenv
+def get_env_value[T = str](
+    option_name: str,
+    default: str | T = "false",
+) -> str | T:
+    return os_getenv(option_name, default)
 
 
-def load_debug_configs():
-    load_dotenv()
-    changed_list = []
+def load_configs():
+    load_dotenv(env_FILE_NAME)
 
-    print(f"Loading {len(env_configs)} env configs...")
+    print(f"Loading {len(expected_env_configs)} env configs...")
 
-    option_all = get_option("ALL", "")
+    option_ALL = get_env_value("ALL", MISSING)
+    
+    if option_ALL is not MISSING:
+        all_configs_value = evaluate_boolean(option_ALL)
 
-    all_configs_value = evaluate_string_option(option_all)
+        
 
-    for (config_location_name, config_name), config_env_name in env_configs.items():
-        if option_all is not None:
-            option = get_option(config_env_name, None)
-            if option is not None:
-                value = evaluate_string_option(
-                option)
-            else: 
-                value = all_configs_value
+    show_updates = debugger.FLAGS.init_info
+
+    for config_env_name , (config_location_name, config_name) in expected_env_configs.items():
+        if option_ALL is MISSING:
+            option = get_env_value(config_env_name)
+            value = evaluate_boolean(option)
         else:
-            option = get_option(config_env_name)
-            value = evaluate_string_option(option)
+            option = get_env_value(config_env_name, MISSING)
+            if option is MISSING:
+                value = all_configs_value
+            else:
+                value = evaluate_boolean(
+                option)
 
         if value == getattr(config_location_name, config_name):
             continue
 
-        changed_list.append((config_location_name.__name__, config_name, value))
         setattr(config_location_name, config_name, value)
 
-    show_updates = debugger.FLAGS.init_info
-    if show_updates:
-        for details in changed_list:
-            print("Config {}[{!r}] set to {!r}".format(*details))
+        if show_updates:
+            print("Config {}[{!r}] set to {!r}".format(config_location_name.__name__, config_name, value))
     print(f"Updated configs.")

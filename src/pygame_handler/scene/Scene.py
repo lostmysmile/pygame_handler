@@ -167,11 +167,10 @@ class Scene:
     def _trigger_event(self,ctx: StateEventContext|DrawEventContext,event_type:str,event_name:str):
         invoker_name = "_invoke_all"
         
-        global_events_getter = attrgetter(f"{event_type}.{event_name}.{invoker_name}")
-        local_events_getter=attrgetter(f"{event_type}.{event_name}.{invoker_name}")
+        event_getter = attrgetter(f"{event_type}.{event_name}.{invoker_name}")
 
-        global_events_invoker = global_events_getter(Scenes_handler.Global_Events)
-        local_events_invoker = local_events_getter(self.events_handler)
+        global_events_invoker = event_getter(Scenes_handler.Global_Events)
+        local_events_invoker = event_getter(self.events_handler)
         
         global_events_invoker(ctx)
         local_events_invoker(ctx)
