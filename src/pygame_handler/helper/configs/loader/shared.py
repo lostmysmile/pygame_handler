@@ -1,6 +1,3 @@
-from operator import attrgetter
-from typing import Any
-
 from pygame_handler.helper import debugger
 
 MISSING = sentinel("MISSING")
@@ -12,8 +9,8 @@ INI_FILE_NAME = "src/.ini"
 env_FILE_NAME = "src/.env"
 
 #? Structure=
-#   option name: (variable location, variable name inside location)
-expected_env_configs = {
+#*   option name: (variable location, variable name inside location)
+expected_env_configs:  dict[str, tuple[object, str]] = {
     # "RUN_ONCE":(debugger.FLAGS, "run_once"),
     # "DEBUG_MODE":(debugger.FLAGS, "debug_mode"),
     # "DETAILED_INFO":(debugger.FLAGS, "detailed_info"),
@@ -27,10 +24,9 @@ expected_env_configs = {
 }
 
 #? Structure= 
-#   sections:
-#       option name: (variable location, variable name inside location)
-
-expected_ini_configs = {
+#*   sections:
+#*       option name: (variable location, variable name inside location)
+expected_ini_configs: dict[str, dict[str, tuple[object, str]]] = {
     "INVALID":{},
     "LOOP": {
     "run_once":(debugger.FLAGS, "run_once"),

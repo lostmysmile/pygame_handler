@@ -10,8 +10,9 @@ from pygame_handler.scene.events import DrawEventContext, EventsHandler, StateEv
 from .events import ENUMS as EVENT_NUMS
 
 
-if TYPE_CHECKING:
-    from ..system.core import Game
+lazy from ..system.core import Game
+# if TYPE_CHECKING:
+#     from ..system.core import Game
 
 from pygame_handler.helper.debugger import FLAGS
 from pygame_handler.helper.logger import show_message

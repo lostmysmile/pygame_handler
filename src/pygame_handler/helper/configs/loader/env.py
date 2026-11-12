@@ -1,9 +1,10 @@
+from typing import cast
+
 from pygame_handler.helper import debugger
 from dotenv import load_dotenv as load_dotenv
 
-from typing import Any
 
-from .core import MISSING,expected_env_configs,env_FILE_NAME,truthy_values
+from .shared import MISSING,expected_env_configs,env_FILE_NAME,truthy_values
 
 
 def evaluate_boolean(string: str) -> bool:
@@ -32,7 +33,7 @@ def load_configs():
 
     show_updates = debugger.FLAGS.init_info
 
-    for config_env_name , (config_location_name, config_name) in expected_env_configs.items():
+    for config_env_name , (config_location_ref, config_name) in expected_env_configs.items():
         if option_ALL is MISSING:
             option = get_env_value(config_env_name)
             value = evaluate_boolean(option)
@@ -44,11 +45,12 @@ def load_configs():
                 value = evaluate_boolean(
                 option)
 
-        if value == getattr(config_location_name, config_name):
+        if value == getattr(config_location_ref, config_name):
             continue
 
-        setattr(config_location_name, config_name, value)
+        setattr(config_location_ref, config_name, value)
 
         if show_updates:
-            print("Config {}[{!r}] set to {!r}".format(config_location_name.__name__, config_name, value))
+            config_location_ref = cast(str,config_location_ref.__name__)
+            print("Config {}[{!r}] set to {!r}".format(config_location_ref, config_name, value))
     print(f"Updated configs.")

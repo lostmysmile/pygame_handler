@@ -1,0 +1,5 @@
+[LOOP]
+RUN_ONCE=true
+[DEBUGGER]
+; all=FALSE
+all=yes
